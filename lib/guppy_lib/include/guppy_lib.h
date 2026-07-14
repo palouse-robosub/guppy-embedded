@@ -6,6 +6,9 @@
 
 #define MS_BETWEEN_HEARTBEATS 1000
 
+#define ROS_TIMEOUT_DELAY_MS 10000
+// no heartbeat ID assigned yet so set to 0xAAA
+#define ROS_HEARTBEAT_ID 0xAAA
 typedef enum {
     STARTUP = 0,
     HOLDING = 1,

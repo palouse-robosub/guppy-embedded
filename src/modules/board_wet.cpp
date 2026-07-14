@@ -55,6 +55,7 @@ void board_wet_loop()
 
     sensor.setFluidDensity(997); // kg/m^3 (freshwater) TODO: change to actual density
 
+    RateLimit ros_timeout = new_rate_limit(ROS_TIMEOUT_DELAY_MS);
 
     size_t led_groups[3] = {42, 40, 40};
     LEDController<3> led_strip(LEDS_PIN, led_groups);
@@ -65,9 +66,18 @@ void board_wet_loop()
 
     while (true)
     {
+        if (check_rate(&ros_timeout))
+        {
+            led_strip.timeout();
+        }
         if (canbus_read(&msg))
         {
             led_strip.update(msg);
+            if (msg.id == ROS_HEARTBEAT_ID) // reset ros timeout
+            {
+                ros_timeout = new_rate_limit(ROS_TIMEOUT_DELAY_MS);
+                check_rate(&ros_timeout);
+            }
         }
 
         do_heartbeat(0x020);

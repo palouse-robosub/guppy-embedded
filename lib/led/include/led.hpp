@@ -26,6 +26,8 @@ public:
     /// Updates LEDController based on the provided CAN message
     /// (does care about CAN ID and will ignore messages from most IDs)
     bool update(const struct can2040_msg& msg);
+    /// Timeout resets the state to Startup
+    void timeout();
 private:
     int tick_count;
     Adafruit_NeoPixel led_strip;
@@ -111,6 +113,13 @@ bool LEDController<LED_GROUP_COUNT>::update(const can2040_msg& msg)
         return true;
     }
     else return false;
+}
+
+
+template <size_t LED_GROUP_COUNT>
+void LEDController<LED_GROUP_COUNT>::timeout()
+{
+    this->state = STARTUP;
 }
 
 template <size_t LED_GROUP_COUNT>

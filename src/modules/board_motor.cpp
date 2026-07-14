@@ -17,6 +17,7 @@ constexpr uint8_t led_pin = 28;
 constexpr uint16_t motor_board_heartbeat_id = 0x010;
 constexpr uint16_t motor_board_id = 0x410;
 constexpr uint16_t estop_triggered_id = 0x01B;
+constexpr uint16_t ros_heartbeat_id = 0xAAA;
 // constexpr uint16_t torpedo_servo_id = 0x019;
 // constexpr uint16_t claw_servo_id = 0x01A;
 
@@ -37,6 +38,8 @@ void board_motor_loop()
     RateLimit estop_rate_limit = new_rate_limit(20);
     bool estop_triggered = true;
 
+    RateLimit ros_timeout = new_rate_limit(ROS_TIMEOUT_DELAY_MS);
+
     constexpr int strip_count = 3;
     size_t led_groups[strip_count] = {42, 42, 42};
     LEDController<strip_count> led_strip(led_pin, led_groups);
@@ -48,11 +51,17 @@ void board_motor_loop()
 
         const absolute_time_t cur_time = get_absolute_time();
 
+        if (check_rate(&ros_timeout))
+        {
+            led_strip.timeout();
+        }
+
         struct can2040_msg msg = { 0 };
         if (canbus_read(&msg)) // returns true if has message. Sets the &msg to the message
         {
             led_strip.update(msg);
-            if (msg.id >= (motor_board_id+1) && msg.id <= (motor_board_id+NUM_PINS)) {
+            if (msg.id >= (motor_board_id+1) && msg.id <= (motor_board_id+NUM_PINS))
+            {
                 float value = can_read_float(msg) * MOTOR_MULT;
                 if (value > 1.0) value = 1.0;
                 if (value < -1.0) value = -1.0;
@@ -67,6 +76,11 @@ void board_motor_loop()
                 if (!estop_triggered && allowed_to_motor(led_strip.state))
                     pwm_write(pwm_pins[index], micro_seconds);
                 last_updates[index].time = cur_time;
+            }
+            if (msg.id == ros_heartbeat_id) // reset ros timeout
+            {
+                ros_timeout = new_rate_limit(ROS_TIMEOUT_DELAY_MS);
+                check_rate(&ros_timeout);
             }
 
             // TODO: test servo functionality, it may be different than motor throttle
