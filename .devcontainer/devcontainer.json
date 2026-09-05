@@ -1,4 +1,5 @@
 {
   "name": "Guppy Embedded",
   "dockerFile": "Dockerfile",
+  "runArgs": ["--security-opt", "label=disable"] // For SELinux
 }
