@@ -19,7 +19,6 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/KevinOConnor/can2040.git
     GIT_TAG master
 )
-
 FetchContent_MakeAvailable(can2040)
 
 add_library(can2040 STATIC
@@ -33,6 +32,8 @@ target_include_directories(can2040 PUBLIC
 target_link_libraries(can2040
     hardware_pio
 )
+
+include(codegen/CMakeLists.txt)
 
 # add libraries
 add_subdirectory(lib/pico_neopixels)
@@ -51,7 +52,10 @@ function(add_board BOARD_NAME BOARD_TYPE)
     add_executable(${BOARD_NAME}
         src/main.cpp
         ${MODULE_SOURCES}
+        ${GUPPY_CAN}
     )
+    add_dependencies(${BOARD_NAME} run_can_generator)
+    target_include_directories(${BOARD_NAME} PRIVATE ${CMAKE_BINARY_DIR}/generated)
 
     pico_set_binary_type(${BOARD_NAME} copy_to_ram)
     target_link_libraries(${BOARD_NAME}

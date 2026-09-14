@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+CAN ID Format:
+11 bits:
+000 00000 000
+
+Bit     1: No ROS Echo
+Bit     2: Reserved for future use
+Bits  3-8: Device ID
+Bits 9-11: Device Sub-ID
+-->
+
+<!--
+XML Format:
+name="ExampleID"
+^ This name must be a valid C++ identifier and a valid ROS2 topic name
+https://en.cppreference.com/cpp/language/identifiers
+https://design.ros2.org/articles/topic_and_service_names.html
+
+no-ros-echo="false"
+^ If true these messages will not be published to a ROS topic
+
+device-id="0"
+^ 6 bit integer
+
+sub-id="0"
+^ 3 bit integer; Useful for grouping related IDs
+-->
+
+<can-ids>
+    <!--
+    <id name="ExampleID" no-ros-echo="false" device-id="0" sub-id="0"/>
+    -->
+    <id name="CurrentState" no-ros-echo="false" device-id="1" sub-id="0"/>
+
+    <id name="MotorBoardHeartbeat" no-ros-echo="false" device-id="2" sub-id="0"/>
+
+    <id name="Motor0" no-ros-echo="true" device-id="3" sub-id="0"/>
+    <id name="Motor1" no-ros-echo="true" device-id="3" sub-id="1"/>
+    <id name="Motor2" no-ros-echo="true" device-id="3" sub-id="2"/>
+    <id name="Motor3" no-ros-echo="true" device-id="3" sub-id="3"/>
+    <id name="Motor4" no-ros-echo="true" device-id="3" sub-id="4"/>
+    <id name="Motor5" no-ros-echo="true" device-id="3" sub-id="5"/>
+    <id name="Motor6" no-ros-echo="true" device-id="3" sub-id="6"/>
+    <id name="Motor7" no-ros-echo="true" device-id="3" sub-id="7"/>
+
+    <id name="Torpedo" no-ros-echo="false" device-id="4" sub-id="0"/>
+
+    <id name="Claw" no-ros-echo="false" device-id="5" sub-id="0"/>
+
+    <id name="EStopTriggered" no-ros-echo="false" device-id="6" sub-id="0"/>
+
+    <id name="WetBoardHeartbeat" no-ros-echo="false" device-id="8" sub-id="0"/>
+
+    <id name="LEDBrightness" no-ros-echo="false" device-id="9" sub-id="0"/>
+
+    <id name="Switch1" no-ros-echo="false" device-id="10" sub-id="1"/>
+    <id name="Switch2" no-ros-echo="false" device-id="10" sub-id="2"/>
+
+    <id name="MoistureSensor" no-ros-echo="false" device-id="11" sub-id="0"/>
+
+    <id name="BarometerError" no-ros-echo="false" device-id="12" sub-id="0"/>
+    <id name="BarometerTemp" no-ros-echo="false" device-id="12" sub-id="1"/>
+    <id name="BarometerDepth" no-ros-echo="false" device-id="12" sub-id="2"/>
+    <id name="BarometerAlt" no-ros-echo="false" device-id="12" sub-id="3"/>
+</can-ids>
