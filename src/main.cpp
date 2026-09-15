@@ -11,10 +11,12 @@ extern "C" {
 #include "guppylib/led.hpp"
 #include <iostream>
 
+using namespace guppylib;
+
 int main()
 {
     stdio_init_all();
-    guppylib::canbus::setup();
+    canbus::setup();
 
     switch(BOARD_TYPE)
     {

@@ -10,6 +10,8 @@ extern "C" {
 
 #define BRIGHTNESS 50 // brightness of pixels out of 255
 
+namespace guppylib::led
+{
 
 template <size_t LED_GROUP_COUNT>
 class LEDController
@@ -198,6 +200,8 @@ void LEDController<LED_GROUP_COUNT>::fault()
         two_color(this->color_blue(), this->color_blue());
     else
         two_color(this->color_red(), this->color_red());
+}
+
 }
 
 #endif //GUPPY_EMBEDDED_LED_H

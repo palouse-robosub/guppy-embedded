@@ -19,6 +19,8 @@ extern "C" {
 
 #define LEDS_PIN            20
 
+using namespace guppylib;
+
 static void init_pins()
 {
     // From pico_examples
@@ -58,7 +60,7 @@ void board_wet_loop()
 
 
     size_t led_groups[3] = {42, 40, 40};
-    LEDController<3> led_strip(LEDS_PIN, led_groups);
+    led::LEDController<3> led_strip(LEDS_PIN, led_groups);
 
     struct can2040_msg msg = { 0 };
 
@@ -101,11 +103,11 @@ void board_wet_loop()
             {
                 if (!sensor.init(PICO_I2C_INSTANCE))
                 {
-                    canbus_transmit_int(0x029, 0);
+                    canbus::transmit_int(0x029, 0);
                 }
                 else
                 {
-                    canbus_transmit_int(0x029, 1);
+                    canbus::transmit_int(0x029, 1);
                 }
             }
 

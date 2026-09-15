@@ -3,20 +3,16 @@
 #include "guppylib/canbus.hpp"
 
 #include "pico/stdlib.h"
+
+extern "C"
+{
 #include "can2040.h"
+}
 
 namespace guppylib::canbus
 {
 
 /* ---------------CAN stuff--------------- */
-
-// Simple example of irq safe queue (this is not multi-core safe)
-#define QUEUE_SIZE 128 // Must be power of 2
-static struct {
-    uint32_t pull_pos;
-    volatile uint32_t push_pos;
-    struct can2040_msg queue[QUEUE_SIZE];
-} MessageQueue;
 
 // Internal storage for can2040 module
 static struct can2040 cbus;

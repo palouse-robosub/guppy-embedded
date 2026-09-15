@@ -2,19 +2,9 @@
 #define _GUPPY_LIB_H
 
 #include "pico/stdlib.h"
-#include "can2040.h"
+#include "guppylib/state.hpp"
 
 #define MS_BETWEEN_HEARTBEATS 1000
-
-typedef enum {
-    STARTUP = 0,
-    HOLDING = 1,
-    NAV = 2,
-    TASK = 3,
-    TELEOP = 4,
-    DISABLED = 5,
-    FAULT = 6
-} State;
 
 // returns if motors are allowed to run in the state
 bool allowed_to_motor(State state);

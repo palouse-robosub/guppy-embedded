@@ -9,6 +9,8 @@ extern "C" {
 #include <guppylib/pwm.hpp>
 #include <guppylib/canbus.hpp>
 
+using namespace guppylib;
+
 #define NUM_PINS 8
 static const uint8_t pwm_pins[NUM_PINS] = { 16, 17, 18, 20, 19, 25, 26, 27 }; // motors 3 & 4 swapped in hardware
 static RateLimit last_updates[NUM_PINS]{};
@@ -28,7 +30,7 @@ constexpr uint16_t estop_triggered_id = 0x01B;
 void board_motor_loop()
 {
     for (int i = 0; i < NUM_PINS; i++) {
-        guppylib::pwm::init_pin(pwm_pins[i]);
+        pwm::init_pin(pwm_pins[i]);
         last_updates[i] = new_rate_limit(500);
     }
     // add_pwm_pin(claw_servo_pin);
@@ -41,7 +43,7 @@ void board_motor_loop()
 
     constexpr int strip_count = 3;
     size_t led_groups[strip_count] = {42, 42, 42};
-    LEDController<strip_count> led_strip(led_pin, led_groups);
+    led::LEDController<strip_count> led_strip(led_pin, led_groups);
 
     while (true)
     {
@@ -58,7 +60,7 @@ void board_motor_loop()
                 float value = canbus::read_float(msg) * MOTOR_MULT;
                 if (value > 1.0) value = 1.0;
                 if (value < -1.0) value = -1.0;
-                int micro_seconds = guppylib::pwm::float_to_signal(value);
+                int micro_seconds = pwm::float_to_signal(value);
 
                 // NDEBUG should be added by CMAKE on release builds
                 printf("received motor power for id %x\n", msg.id);
@@ -67,7 +69,7 @@ void board_motor_loop()
 
                 const int index = msg.id - motor_board_id - 1;
                 if (!estop_triggered && allowed_to_motor(led_strip.state))
-                    guppylib::pwm::write(pwm_pins[index], micro_seconds);
+                    pwm::write(pwm_pins[index], micro_seconds);
                 last_updates[index].time = cur_time;
             }
 
@@ -86,7 +88,7 @@ void board_motor_loop()
             if (check_rate(&last_updates[i]))
             {
                 printf("stale motor %d\n", i);
-                guppylib::pwm::write(pwm_pins[i], guppylib::pwm::float_to_signal(0.0));
+                pwm::write(pwm_pins[i], pwm::float_to_signal(0.0));
             }
         }
         #endif
@@ -102,7 +104,7 @@ void board_motor_loop()
                 for (int i = 0; i < NUM_PINS; i++)
                 {
                     // printf("disable motor %d\n", i);
-                    guppylib::pwm::write(pwm_pins[i], guppylib::pwm::float_to_signal(0.0));
+                    pwm::write(pwm_pins[i], pwm::float_to_signal(0.0));
                 }
             }
         }
