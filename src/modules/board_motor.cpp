@@ -1,11 +1,13 @@
 extern "C" {
     #include "can2040.h"
-    #include "guppy_lib.h"
     #include "pico/stdlib.h"
     #include <stdio.h>
 }
+#include "guppylib/guppy_lib.h"
 #include "board_motor.h"
-#include "led.hpp"
+#include <guppylib/led.hpp>
+#include <guppylib/pwm.hpp>
+#include <guppylib/canbus.hpp>
 
 #define NUM_PINS 8
 static const uint8_t pwm_pins[NUM_PINS] = { 16, 17, 18, 20, 19, 25, 26, 27 }; // motors 3 & 4 swapped in hardware
@@ -26,7 +28,7 @@ constexpr uint16_t estop_triggered_id = 0x01B;
 void board_motor_loop()
 {
     for (int i = 0; i < NUM_PINS; i++) {
-        add_pwm_pin(pwm_pins[i]);
+        guppylib::pwm::init_pin(pwm_pins[i]);
         last_updates[i] = new_rate_limit(500);
     }
     // add_pwm_pin(claw_servo_pin);
@@ -49,14 +51,14 @@ void board_motor_loop()
         const absolute_time_t cur_time = get_absolute_time();
 
         struct can2040_msg msg = { 0 };
-        if (canbus_read(&msg)) // returns true if has message. Sets the &msg to the message
+        if (canbus::read(&msg)) // returns true if has message. Sets the &msg to the message
         {
             led_strip.update(msg);
             if (msg.id >= (motor_board_id+1) && msg.id <= (motor_board_id+NUM_PINS)) {
-                float value = can_read_float(msg) * MOTOR_MULT;
+                float value = canbus::read_float(msg) * MOTOR_MULT;
                 if (value > 1.0) value = 1.0;
                 if (value < -1.0) value = -1.0;
-                int micro_seconds = throttle_to_pwm_us(value);
+                int micro_seconds = guppylib::pwm::float_to_signal(value);
 
                 // NDEBUG should be added by CMAKE on release builds
                 printf("received motor power for id %x\n", msg.id);
@@ -65,7 +67,7 @@ void board_motor_loop()
 
                 const int index = msg.id - motor_board_id - 1;
                 if (!estop_triggered && allowed_to_motor(led_strip.state))
-                    pwm_write(pwm_pins[index], micro_seconds);
+                    guppylib::pwm::write(pwm_pins[index], micro_seconds);
                 last_updates[index].time = cur_time;
             }
 
@@ -84,7 +86,7 @@ void board_motor_loop()
             if (check_rate(&last_updates[i]))
             {
                 printf("stale motor %d\n", i);
-                pwm_write(pwm_pins[i], throttle_to_pwm_us(0.0));
+                guppylib::pwm::write(pwm_pins[i], guppylib::pwm::float_to_signal(0.0));
             }
         }
         #endif
@@ -93,14 +95,14 @@ void board_motor_loop()
         if (check_rate(&estop_rate_limit))
         {
             estop_triggered = gpio_get(estop_pin); // estop triggered by disconnecting the switch
-            canbus_transmit_int(estop_triggered_id, estop_triggered);
+            canbus::transmit_int(estop_triggered_id, estop_triggered);
 
             if (estop_triggered || !allowed_to_motor(led_strip.state))
             {
                 for (int i = 0; i < NUM_PINS; i++)
                 {
                     // printf("disable motor %d\n", i);
-                    pwm_write(pwm_pins[i], throttle_to_pwm_us(0.0));
+                    guppylib::pwm::write(pwm_pins[i], guppylib::pwm::float_to_signal(0.0));
                 }
             }
         }

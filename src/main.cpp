@@ -3,17 +3,18 @@
 // This code listens to id 0x101 for float values, echoes the can frame on id 0x102, and outputs analog output on pin 20
 extern "C" {
 #include "pico/stdlib.h"
-#include "guppy_lib.h"
 }
+#include "guppylib/guppy_lib.h"
+#include <guppylib/canbus.hpp>
 #include "modules/board_motor.h"
 #include "modules/board_wet.h"
-#include "led.hpp"
+#include "guppylib/led.hpp"
 #include <iostream>
 
 int main()
 {
     stdio_init_all();
-    canbus_setup();
+    guppylib::canbus::setup();
 
     switch(BOARD_TYPE)
     {

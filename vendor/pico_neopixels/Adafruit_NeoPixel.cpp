@@ -43,7 +43,7 @@
  *
  */
 
-#include "Adafruit_NeoPixel.hpp"
+#include "adafruit/Adafruit_NeoPixel.hpp"
 #include "pico/stdio.h"
 #include "pico/malloc.h"
 //#include "pico/mem_ops.h"

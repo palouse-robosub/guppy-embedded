@@ -2,10 +2,11 @@
 #define GUPPY_EMBEDDED_LED_H
 
 extern "C" {
-    #include "guppy_lib.h"
     #include "can2040.h"
 }
-#include "Adafruit_NeoPixel.hpp"
+#include "guppylib/guppy_lib.h"
+#include "guppylib/canbus.hpp"
+#include "adafruit/Adafruit_NeoPixel.hpp"
 
 #define BRIGHTNESS 50 // brightness of pixels out of 255
 
@@ -86,7 +87,7 @@ bool LEDController<LED_GROUP_COUNT>::update(const can2040_msg& msg)
 {
     if (msg.id == 0x201) // CAN ID Spreadsheet `current state`
     {
-        State new_state = static_cast<State>(can_read_int(msg));
+        State new_state = static_cast<State>(guppylib::canbus::read_int(msg));
         if (new_state != state)
         {
             // we want to synchronize the timing for each hull
@@ -104,7 +105,7 @@ bool LEDController<LED_GROUP_COUNT>::update(const can2040_msg& msg)
     }
     if (msg.id == 0x021) // CAN ID Spreadsheet `led brightness`
     {
-        float brightness_float = can_read_float(msg);
+        float brightness_float = guppylib::canbus::read_float(msg);
         if (brightness_float > 1.0) brightness_float = 1.0;
         if (brightness_float < 0.0) brightness_float = 0.0;
         brightness = static_cast<uint8_t>(brightness_float * 255.0);

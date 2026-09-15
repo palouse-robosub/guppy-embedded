@@ -1,7 +1,10 @@
 add_library(guppy_lib INTERFACE)
 
 target_sources(guppy_lib INTERFACE
-  ${CMAKE_CURRENT_LIST_DIR}/guppy_lib.c
+  ${CMAKE_CURRENT_LIST_DIR}/src/guppy_lib.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/pwm.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/canbus.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/include/guppylib/led.hpp
 )
 
 pico_enable_stdio_usb(guppy_lib 1)
@@ -13,4 +16,6 @@ target_include_directories(guppy_lib INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include
 target_link_libraries(guppy_lib INTERFACE 
     pico_stdlib
     hardware_pwm
+    can2040
+    pico_neopixel
 )

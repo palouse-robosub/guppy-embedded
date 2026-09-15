@@ -35,9 +35,8 @@ target_link_libraries(can2040
 )
 
 # add libraries
-add_subdirectory(lib/pico_neopixels)
-add_subdirectory(lib/led)
-add_subdirectory(lib/barometer)
+add_subdirectory(vendor/pico_neopixels)
+add_subdirectory(vendor/barometer)
 add_subdirectory(lib/guppy_lib)
 
 # add stuff from modules folder
@@ -59,7 +58,6 @@ function(add_board BOARD_NAME BOARD_TYPE)
         can2040
         guppy_lib
         pico_neopixel
-        led_strip
         barometer
     )
 

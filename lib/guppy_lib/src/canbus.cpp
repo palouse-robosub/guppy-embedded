@@ -1,29 +1,12 @@
-#include "hardware/pwm.h"
-#include <string.h>
+#include <cstring>
 
-#include "guppy_lib.h"
+#include "guppylib/canbus.hpp"
 
-bool allowed_to_motor(State state)
+#include "pico/stdlib.h"
+#include "can2040.h"
+
+namespace guppylib::canbus
 {
-    return state == HOLDING
-           || state == NAV
-           || state == TASK
-           || state == TELEOP;
-}
-
-RateLimit new_rate_limit(int min_delay_ms) {
-    return (RateLimit) { .time = get_absolute_time() - min_delay_ms*1000, .min_delay_ms = min_delay_ms };
-}
-
-bool check_rate(RateLimit* r)
-{
-    absolute_time_t current_time = get_absolute_time();
-    if (absolute_time_diff_us(r->time, current_time)/1000 > r->min_delay_ms) {
-        r->time = current_time;
-        return true;
-    }
-    return false;
-}
 
 /* ---------------CAN stuff--------------- */
 
@@ -63,7 +46,7 @@ static void can2040_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *
     }
 }
 
-void canbus_setup()
+void setup()
 {
     uint32_t pio_num = 2;
     uint32_t sys_clock = SYS_CLK_HZ, bitrate = 500000;
@@ -82,7 +65,7 @@ void canbus_setup()
     can2040_start(&cbus, sys_clock, bitrate, gpio_rx, gpio_tx);
 }
 
-bool canbus_read(struct can2040_msg *msg)
+bool read(struct can2040_msg *msg)
 {
     const uint32_t push_pos = MessageQueue.push_pos;
     const uint32_t pull_pos = MessageQueue.pull_pos;
@@ -93,7 +76,7 @@ bool canbus_read(struct can2040_msg *msg)
     MessageQueue.pull_pos++;
 }
 
-int canbus_transmit_float(uint32_t id, float value)
+int transmit_float(uint32_t id, float value)
 {
     struct can2040_msg tmsg;
     tmsg.id = id; // TODO: isn't id 11 bits, why does this take 32bit?
@@ -106,7 +89,7 @@ int canbus_transmit_float(uint32_t id, float value)
     return sts;
 }
 
-int canbus_transmit_int(uint32_t id, int32_t value)
+int transmit_int(uint32_t id, int32_t value)
 {
     struct can2040_msg tmsg;
     tmsg.id = id; // TODO: isn't id 11 bits, why does this take 32bit?
@@ -131,7 +114,7 @@ int canbus_transmit_int(uint32_t id, int32_t value)
 //     return can2040_transmit(&cbus, &tmsg);
 // }
 
-float can_read_float(struct can2040_msg msg) // TODO: is it possible to have a type generic for what to parse to?
+float read_float(struct can2040_msg msg) // TODO: is it possible to have a type generic for what to parse to?
 {                                            // second TODO: make this memory safe?
     float value;
     memcpy(&value, msg.data, sizeof(float));
@@ -139,7 +122,7 @@ float can_read_float(struct can2040_msg msg) // TODO: is it possible to have a t
     return value;
 }
 
-int32_t can_read_int(struct can2040_msg msg)
+int32_t read_int(struct can2040_msg msg)
 {
     int32_t value;
     memcpy(&value, msg.data, sizeof(int32_t));
@@ -147,50 +130,4 @@ int32_t can_read_int(struct can2040_msg msg)
     return value;
 }
 
-static uint32_t last_heartbeat_time = 0;
-
-void do_heartbeat(uint32_t id)
-{
-    uint32_t cur_time = to_ms_since_boot(get_absolute_time());
-    
-    if (cur_time - last_heartbeat_time > MS_BETWEEN_HEARTBEATS)
-    {
-        last_heartbeat_time = cur_time;
-        canbus_transmit_int(id, cur_time);
-    }
-}
-
-/* ---------------PWM stuff--------------- */
-
-// TODO: look over function rq
-void add_pwm_pin(uint pin_num)
-{
-    gpio_set_function(pin_num, GPIO_FUNC_PWM);
-
-    const uint slice_num = pwm_gpio_to_slice_num(pin_num);
-    const uint channel_num = pwm_gpio_to_channel(pin_num);
-
-    const float divider = 150.0f; // this maps the level to be in micro seconds
-    const int wrap = 20000;
-
-    // Configure PWM frequency (wrap value) and duty cycle (channel level)
-    pwm_set_clkdiv(slice_num, divider);
-    pwm_set_wrap(slice_num, wrap); // TODO: look at wrap
-
-    // set initial signal to 1500, which is neutral state
-    pwm_set_chan_level(slice_num, channel_num, 1500);
-    pwm_set_enabled(slice_num, true);
-}
-
-void pwm_write(uint pin_num, uint16_t level)
-{
-    const uint slice_num = pwm_gpio_to_slice_num(pin_num);
-    const uint channel_num = pwm_gpio_to_channel(pin_num);
-
-    pwm_set_chan_level(slice_num, channel_num, level);
-}
-
-int throttle_to_pwm_us(float value)
-{
-    return 1500 + (int)(value * 400);
 }

@@ -1,12 +1,13 @@
 #include "board_wet.h"
-#include "barometer.h"
-#include "led.hpp"
+#include "bluerobotics/barometer.h"
+#include "guppylib/led.hpp"
 
 extern "C" {
 #include "pico/stdlib.h"
 #include "can2040.h"
-#include "guppy_lib.h"
 }
+#include <guppylib/guppy_lib.h>
+#include <guppylib/canbus.hpp>
 #include <iostream>
 
 #define PICO_I2C_INSTANCE   i2c0
@@ -65,7 +66,7 @@ void board_wet_loop()
 
     while (true)
     {
-        if (canbus_read(&msg))
+        if (canbus::read(&msg))
         {
             led_strip.update(msg);
         }
@@ -83,8 +84,8 @@ void board_wet_loop()
                 depth = sensor.depth();
                 temp = sensor.temperature();
 
-                canbus_transmit_float(0x026, depth);
-                canbus_transmit_float(0x025, temp);
+                canbus::transmit_float(0x026, depth);
+                canbus::transmit_float(0x025, temp);
 
                 //printf("\nPressure: %f\n", sensor.pressure());
                 // printf("Altitude: %f\n", sensor.altitude());
@@ -93,8 +94,8 @@ void board_wet_loop()
             }
             
 
-            canbus_transmit_int(0x022, gpio_get(SWITCH_PIN_ONE));
-            canbus_transmit_int(0x023, gpio_get(SWITCH_PIN_TWO));
+            canbus::transmit_int(0x022, gpio_get(SWITCH_PIN_ONE));
+            canbus::transmit_int(0x023, gpio_get(SWITCH_PIN_TWO));
             // Barometer
             if (!sensor.isInitialized())
             {
