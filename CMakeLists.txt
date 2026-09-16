@@ -47,6 +47,22 @@ target_link_libraries(can2040
     hardware_pio
 )
 
+include(ExternalProject)
+ExternalProject_Add(guppy_codegen
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/codegen
+    BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/guppy-codegen
+    CMAKE_ARGS
+    -DCMAKE_C_COMPILER=cc
+    -DCMAKE_CXX_COMPILER=c++
+    -DCMAKE_TOOLCHAIN_FILE=
+    BUILD_ALWAYS 1
+    BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/guppy-codegen/generated/GuppyCAN.hpp
+    INSTALL_COMMAND ""
+)
+#include(codegen/CMakeLists.txt)
+#add_subdirectory(codegen)
+# TODO: move some stuff from can_generator.cpp into here so that we can depend on it??
+
 # add libraries
 add_subdirectory(vendor/pico_neopixels) # TODO: update guppylib to not depend on pico_neopixels
 add_subdirectory(vendor/barometer)
