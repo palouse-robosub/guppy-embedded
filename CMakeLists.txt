@@ -33,7 +33,21 @@ target_link_libraries(can2040
     hardware_pio
 )
 
-include(codegen/CMakeLists.txt)
+include(ExternalProject)
+ExternalProject_Add(guppy_codegen
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/codegen
+    BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/guppy-codegen
+    CMAKE_ARGS
+    -DCMAKE_C_COMPILER=cc
+    -DCMAKE_CXX_COMPILER=c++
+    -DCMAKE_TOOLCHAIN_FILE=
+    BUILD_ALWAYS 1
+    BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/guppy-codegen/generated/GuppyCAN.hpp
+    INSTALL_COMMAND ""
+)
+#include(codegen/CMakeLists.txt)
+#add_subdirectory(codegen)
+# TODO: move some stuff from can_generator.cpp into here so that we can depend on it??
 
 # add libraries
 add_subdirectory(lib/pico_neopixels)
@@ -54,8 +68,8 @@ function(add_board BOARD_NAME BOARD_TYPE)
         ${MODULE_SOURCES}
         ${GUPPY_CAN}
     )
-    add_dependencies(${BOARD_NAME} run_can_generator)
-    target_include_directories(${BOARD_NAME} PRIVATE ${CMAKE_BINARY_DIR}/generated)
+    target_include_directories(${BOARD_NAME} PRIVATE ${CMAKE_BINARY_DIR}/guppy-codegen/generated)
+    add_dependencies(${BOARD_NAME} guppy_codegen)
 
     pico_set_binary_type(${BOARD_NAME} copy_to_ram)
     target_link_libraries(${BOARD_NAME}
