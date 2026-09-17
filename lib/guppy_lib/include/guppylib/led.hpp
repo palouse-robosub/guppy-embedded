@@ -1,5 +1,5 @@
-#ifndef GUPPY_EMBEDDED_LED_H
-#define GUPPY_EMBEDDED_LED_H
+#ifndef GUPPY_EMBEDDED_LED_HPP
+#define GUPPY_EMBEDDED_LED_HPP
 
 extern "C" {
     #include "can2040.h"
@@ -204,4 +204,4 @@ void LEDController<LED_GROUP_COUNT>::fault()
 
 }
 
-#endif //GUPPY_EMBEDDED_LED_H
+#endif //GUPPY_EMBEDDED_LED_HPP

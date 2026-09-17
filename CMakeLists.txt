@@ -5,7 +5,7 @@ set(PICO_PLATFORM rp2350)
 include(pico_sdk_import.cmake)
 
 project(guppy_embedded)
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD 17)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 

@@ -3,6 +3,7 @@ extern "C" {
     #include "pico/stdlib.h"
     #include <stdio.h>
 }
+#include <array>
 #include "guppylib/guppy_lib.h"
 #include "board_motor.h"
 #include <guppylib/led.hpp>
@@ -11,9 +12,10 @@ extern "C" {
 
 using namespace guppylib;
 
-#define NUM_PINS 8
-static const uint8_t pwm_pins[NUM_PINS] = { 16, 17, 18, 20, 19, 25, 26, 27 }; // motors 3 & 4 swapped in hardware
-static RateLimit last_updates[NUM_PINS]{};
+
+constexpr uint8_t num_pins = 8;
+constexpr std::array<uint8_t, num_pins> pwm_pins = { 16, 17, 18, 20, 19, 25, 26, 27 }; // motors 3 & 4 swapped in hardware
+static RateLimit last_updates[num_pins]{};
 
 constexpr uint8_t estop_pin = 29;
 constexpr uint8_t led_pin = 28;
@@ -26,6 +28,48 @@ constexpr uint16_t estop_triggered_id = 0x01B;
 
 #define MOTOR_MULT 1.0
 #define ALLOW_STALE_MOTORS false // if this is true it won't set stale motors to 0
+
+
+void board_motor_loop2()
+{
+    
+    // initialize pins
+    for (int i = 0; i < num_pins; i++)
+    {
+        pwm::init_pin(pwm_pins[i]);
+    }
+
+    // set up estop
+
+    // set up 3 led strips
+
+    while (true)
+    {
+        can2040_msg msg{};
+        if (canbus::read(&msg))
+        {
+
+        }
+    }
+
+    // loop
+
+        // heartbeat
+        // update led strips
+        // on message:
+            // update led strip
+            // if id for motors
+                // read & clamp
+                // if no estop and can motor then write
+        // check for stale motors
+        // is estop on
+            // transmit estop triggered
+            // stop motors
+        // are motors disabled
+            // stop motors
+
+    // end loop
+}
 
 void board_motor_loop()
 {
