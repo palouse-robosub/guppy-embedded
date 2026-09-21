@@ -45,7 +45,7 @@ public:
 
         // Setup canbus
         can2040_setup(&can_bus_, pio_num);
-        can2040_callback_config(&can_bus_, can_callback);
+        can2040_callback_config(&can_bus_, can_callback); // TODO: when we get an actual controller, FIX THIS NOW (no more singleton)
 
         // Enable irqs
         irq_set_exclusive_handler(PIO2_IRQ_0, PIOx_IRQHandler);

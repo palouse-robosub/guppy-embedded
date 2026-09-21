@@ -9,13 +9,15 @@ extern "C" {
 #include <guppylib/led.hpp>
 #include <guppylib/pwm.hpp>
 #include <guppylib/canbus.hpp>
+#include <guppylib/ratelimit.hpp>
+#include <guppylib/state.hpp>
 
 using namespace guppylib;
 
 
 constexpr uint8_t num_pins = 8;
 constexpr std::array<uint8_t, num_pins> pwm_pins = { 16, 17, 18, 20, 19, 25, 26, 27 }; // motors 3 & 4 swapped in hardware
-static RateLimit last_updates[num_pins]{};
+static RateLimit<500> last_updates[num_pins]{};
 
 constexpr uint8_t estop_pin = 29;
 constexpr uint8_t led_pin = 28;
@@ -32,6 +34,8 @@ constexpr uint16_t estop_triggered_id = 0x01B;
 
 void board_motor_loop2()
 {
+
+    GuppyContext<3> context(8, 9, 28, {42, 42, 42}, 0x010);
     
     // initialize pins
     for (int i = 0; i < num_pins; i++)

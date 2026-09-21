@@ -10,7 +10,7 @@ extern "C" {
 
 #define BRIGHTNESS 50 // brightness of pixels out of 255
 
-namespace guppylib::led
+namespace guppylib
 {
 
 template <size_t LED_GROUP_COUNT>
