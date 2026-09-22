@@ -1,11 +1,7 @@
-extern "C" {
-    #include "can2040.h"
-    #include "pico/stdlib.h"
-    #include <stdio.h>
-}
+#include <pico/stdlib.h>
 #include <array>
 #include <algorithm>
-#include "board_motor.h"
+
 #include <guppylib/led.hpp>
 #include <guppylib/pwm.hpp>
 #include <guppylib/canbus.hpp>
@@ -13,6 +9,8 @@ extern "C" {
 #include <guppylib/state.hpp>
 #include <guppylib/core.hpp>
 #include <guppylib/gpio.hpp>
+
+#include "board_motor.h"
 
 using namespace guppylib;
 
@@ -31,7 +29,7 @@ constexpr uint16_t estop_triggered_id = 0x01B;
 
 #define MOTOR_MULT 1.0
 
-void board_motor_loop2()
+void board_motor_loop()
 {
     // last time motors have been updated, used for stale motors
     RateLimit<500> last_updates[num_pins]{};

@@ -1,25 +1,30 @@
-#include "board_wet.h"
-#include "bluerobotics/barometer.h"
-#include "guppylib/led.hpp"
-
-extern "C" {
-#include "pico/stdlib.h"
-#include "can2040.h"
-}
-#include <guppylib/guppy_lib.h>
-#include <guppylib/canbus.hpp>
+#include <pico/stdlib.h>
 #include <iostream>
+#include <memory>
+#include <bluerobotics/barometer.h>
+
+#include <guppylib/core.hpp>
+#include <guppylib/gpio.hpp>
+#include <guppylib/canbus.hpp>
+#include <guppylib/led.hpp>
+#include <guppylib/ratelimit.hpp>
+#include <guppylib/core.hpp>
+
+#include "board_wet.h"
+
+
 
 #define PICO_I2C_INSTANCE   i2c0
 #define PICO_I2C_SDA_PIN    16 // white
 #define PICO_I2C_SCL_PIN    17 // green
 
-#define SWITCH_PIN_ONE      26
-#define SWITCH_PIN_TWO      19 
-
-#define LEDS_PIN            20
+constexpr uint16_t switch_one_pin = 26;
+constexpr uint16_t switch_two_pin = 19;
+constexpr uint16_t led_pin = 20;
 
 using namespace guppylib;
+
+
 
 static void init_pins()
 {
@@ -31,12 +36,8 @@ static void init_pins()
     gpio_pull_up(PICO_I2C_SDA_PIN);
 
     // init switches
-    gpio_init(SWITCH_PIN_ONE);
-    gpio_init(SWITCH_PIN_TWO);
-    gpio_set_dir(SWITCH_PIN_ONE, GPIO_IN); // TODO: turn to guppy_lib function
-    gpio_set_dir(SWITCH_PIN_TWO, GPIO_IN);
-    gpio_pull_down(SWITCH_PIN_ONE);
-    gpio_pull_down(SWITCH_PIN_TWO);
+    gpio::init_input(switch_one_pin, gpio::Pull::PullDown);
+    gpio::init_input(switch_two_pin, gpio::Pull::PullDown);
 }
 
 void board_wet_loop()
@@ -45,9 +46,7 @@ void board_wet_loop()
 
     init_pins();
 
-    // make available for picotool
-    //bi_decl(bi_2pins_with_func(PICO_DEFAULT_I2C_SDA_PIN, PICO_DEFAULT_I2C_SCL_PIN, GPIO_FUNC_I2C));
-
+    // set up sensor with I2C pin
     sensor.init(PICO_I2C_INSTANCE);
     if (!sensor.isInitialized())
     {
@@ -55,62 +54,50 @@ void board_wet_loop()
         std::cout << "Are SDA/SCL connected correctly?" << std::endl;
         std::cout << "Blue Robotics Bar30: White=SDA, Green=SCL" << std::endl;
     }
+    sensor.setFluidDensity(997);
 
-    sensor.setFluidDensity(997); // kg/m^3 (freshwater) TODO: change to actual density
+    constexpr size_t led_group_sizes[3] = { 42, 40, 40 };
+    auto led_controller = std::make_unique<LEDController<3>>(led_pin, led_group_sizes);
 
+    RateLimit<50> publish_timer;
 
-    size_t led_groups[3] = {42, 40, 40};
-    led::LEDController<3> led_strip(LEDS_PIN, led_groups);
-
-    struct can2040_msg msg = { 0 };
-
-    RateLimit publish = new_rate_limit(50);
+    Core<3> context(8, 9, 0x020, std::move(led_controller));
 
     while (true)
     {
-        if (canbus::read(&msg))
+        context.tick();
+
+        if (publish_timer.has_timeout())
         {
-            led_strip.update(msg);
-        }
-
-        do_heartbeat(0x020);
-        led_strip.tick();
-
-        float depth{};
-        float temp{};
-
-        if (check_rate(&publish)) // can bus is getting full so im going to only send stuff like every 100ms
-        {
+            /* transmit sensor values */
             if (sensor.read())
             {
-                depth = sensor.depth();
-                temp = sensor.temperature();
+                float depth = sensor.depth();
+                float temp = sensor.temperature();
 
-                canbus::transmit_float(0x026, depth);
-                canbus::transmit_float(0x025, temp);
-
-                //printf("\nPressure: %f\n", sensor.pressure());
-                // printf("Altitude: %f\n", sensor.altitude());
-                // printf("Depth: %f\n", depth);
-                // printf("Temperature: %f\n", temp);
+                context.can_bus().transmit(0x026, depth);
+                context.can_bus().transmit(0x025, temp);
             }
-            
 
-            canbus::transmit_int(0x022, gpio_get(SWITCH_PIN_ONE));
-            canbus::transmit_int(0x023, gpio_get(SWITCH_PIN_TWO));
-            // Barometer
+            /* transmit switch values */
+            const bool switch_one = gpio::read(switch_one_pin);
+            const bool switch_two = gpio::read(switch_two_pin); 
+
+            context.can_bus().transmit(0x022, static_cast<int32_t>(switch_one));
+            context.can_bus().transmit(0x023, static_cast<int32_t>(switch_two));
+
+            /* set up switch if it's not set up */ // TODO: sensor init is slow i think and blocking? anyways this stuff isn't good
             if (!sensor.isInitialized())
             {
                 if (!sensor.init(PICO_I2C_INSTANCE))
                 {
-                    canbus::transmit_int(0x029, 0);
+                    context.can_bus().transmit(0x029, static_cast<int32_t>(0));
                 }
                 else
                 {
-                    canbus::transmit_int(0x029, 1);
+                    context.can_bus().transmit(0x029, static_cast<int32_t>(1));
                 }
             }
-
         }
     }
 }
