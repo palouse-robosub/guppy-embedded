@@ -29,6 +29,15 @@ constexpr uint16_t estop_triggered_id = 0x01B;
 
 #define MOTOR_MULT 1.0
 
+
+
+int main()
+{
+    stdio_init_all();
+
+    board_motor_loop();
+}
+
 void board_motor_loop()
 {
     // last time motors have been updated, used for stale motors

@@ -26,6 +26,13 @@ using namespace guppylib;
 
 
 
+int main()
+{
+    stdio_init_all();
+
+    board_wet_loop();
+}
+
 static void init_pins()
 {
     // From pico_examples
