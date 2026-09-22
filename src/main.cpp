@@ -16,7 +16,6 @@ using namespace guppylib;
 int main()
 {
     stdio_init_all();
-    canbus::setup();
 
     switch(BOARD_TYPE)
     {

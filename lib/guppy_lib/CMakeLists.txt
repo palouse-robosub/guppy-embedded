@@ -5,6 +5,7 @@ target_sources(guppy_lib INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/src/pwm.cpp
   ${CMAKE_CURRENT_LIST_DIR}/src/canbus.cpp
   ${CMAKE_CURRENT_LIST_DIR}/include/guppylib/led.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/gpio.cpp
 )
 
 pico_enable_stdio_usb(guppy_lib 1)
