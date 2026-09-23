@@ -2,21 +2,15 @@
 #include <array>
 #include <algorithm>
 
-#include <guppylib/led.hpp>
-#include <guppylib/pwm.hpp>
-#include <guppylib/canbus.hpp>
-#include <guppylib/ratelimit.hpp>
-#include <guppylib/state.hpp>
-#include <guppylib/core.hpp>
-#include <guppylib/gpio.hpp>
+#include <guppylib/guppylib.hpp>
 
-#include "board_motor.h"
+#include "board_motor.hpp"
 
 using namespace guppylib;
 
 
-constexpr uint8_t num_pins = 8;
-constexpr std::array<uint8_t, num_pins> pwm_pins = { 16, 17, 18, 20, 19, 25, 26, 27 }; // motors 3 & 4 swapped in hardware
+constexpr uint8_t num_motors = 8;
+constexpr std::array<uint8_t, num_motors> motor_pins = { 16, 17, 18, 20, 19, 25, 26, 27 }; // motors 3 & 4 swapped in hardware
 
 constexpr uint8_t estop_pin = 29;
 constexpr uint8_t led_pin = 28;
@@ -38,10 +32,19 @@ int main()
     board_motor_loop();
 }
 
+bool allowed_to_motor(State state)
+{
+    return state == State::Holding
+        || state == State::Nav
+        || state == State::Task
+        || state == State::Teleop;
+}
+
 void board_motor_loop()
 {
     // last time motors have been updated, used for stale motors
-    RateLimit<500> last_updates[num_pins]{};
+    Timer last_updates[num_motors];
+    std::fill_n(last_updates, num_motors, Timer(500));
 
     // set up leds
     constexpr size_t led_group_sizes[] = { 42, 42, 42};
@@ -49,7 +52,7 @@ void board_motor_loop()
 
     // set up estop
     gpio::init_input(estop_pin, gpio::Pull::PullUp);
-    RateLimit<20> estop_rate_limit;
+    Timer estop_rate_limit(20);
     bool estop_triggered = true; // to be safe, start with trigger being true
 
     Core context(8, 9, 0x010, std::move(led_controller));
@@ -58,31 +61,30 @@ void board_motor_loop()
     /* updates motors */
     context.set_can_bus_message_callback([&](can2040_msg& msg, Core<3>& core)
     {
-        if (msg.id >= motor_board_id + 1 && msg.id <= motor_board_id + num_pins)
+        if (msg.id >= motor_board_id + 1 && msg.id <= motor_board_id + num_motors)
         {
             float motor_value = CanBus::parse_float(msg) * MOTOR_MULT;
-            motor_value = std::clamp(motor_value, -1.0f, 1.0f);
         
-            const int pwm_value = pwm::float_to_signal(motor_value);
+            const int pwm_value = pwm::from_float(motor_value);
 
             const int index = msg.id - motor_board_id - 1;
             if (!estop_triggered && allowed_to_motor(core.get_state()))
-                pwm::write(pwm_pins[index], pwm_value);
+                pwm::write(motor_pins[index], pwm_value);
             last_updates[index].reset();
         }
     });
     
     // initialize pins
-    for (int i = 0; i < num_pins; i++)
+    for (int i = 0; i < num_motors; i++)
     {
-        pwm::init_pin(pwm_pins[i]);
+        pwm::init_pin(motor_pins[i]);
     }
 
     while (true)
     {
         context.tick();
 
-        if (estop_rate_limit.has_timeout())
+        if (estop_rate_limit.has_timed_out())
         {
             estop_triggered = gpio::read(estop_pin);
             context.can_bus().transmit(estop_triggered_id, static_cast<int32_t>(estop_triggered)); 
@@ -91,19 +93,19 @@ void board_motor_loop()
         }
 
         /* set stale motors to 0 */
-        for (int i = 0; i < num_pins; i++)
+        for (int i = 0; i < num_motors; i++)
         {
-            if (last_updates[i].has_timeout()) 
+            if (last_updates[i].has_timed_out()) 
             {
-                pwm::write(pwm_pins[i], pwm::float_to_signal(0.0));
+                pwm::write(motor_pins[i], pwm::from_float(0.0));
             }
         }
 
         if (estop_triggered || !allowed_to_motor(context.get_state()))
         {
-            for (int i = 0; i < num_pins; i++)
+            for (int i = 0; i < num_motors; i++)
             {
-                pwm::write(pwm_pins[i], pwm::float_to_signal(0.0));
+                pwm::write(motor_pins[i], pwm::from_float(0.0));
             }
         }
     }

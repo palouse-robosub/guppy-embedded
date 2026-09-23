@@ -7,7 +7,7 @@
 #include <guppylib/gpio.hpp>
 #include <guppylib/canbus.hpp>
 #include <guppylib/led.hpp>
-#include <guppylib/ratelimit.hpp>
+#include <guppylib/timer.hpp>
 #include <guppylib/core.hpp>
 
 #include "board_wet.h"
@@ -66,7 +66,7 @@ void board_wet_loop()
     constexpr size_t led_group_sizes[3] = { 42, 40, 40 };
     auto led_controller = std::make_unique<LEDController<3>>(led_pin, led_group_sizes);
 
-    RateLimit<50> publish_timer;
+    Timer publish_timer(50);
 
     Core<3> context(8, 9, 0x020, std::move(led_controller));
 
@@ -74,7 +74,7 @@ void board_wet_loop()
     {
         context.tick();
 
-        if (publish_timer.has_timeout())
+        if (publish_timer.has_timed_out())
         {
             /* transmit sensor values */
             if (sensor.read())

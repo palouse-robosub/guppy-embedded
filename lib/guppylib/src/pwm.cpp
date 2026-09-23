@@ -1,6 +1,7 @@
 // TODO: look over function rq
 #include <pico/stdlib.h>
 #include <hardware/pwm.h>
+#include <algorithm>
 
 
 #include "guppylib/pwm.hpp"
@@ -35,8 +36,9 @@ void write(uint pin_num, uint16_t level)
     pwm_set_chan_level(slice_num, channel_num, level);
 }
 
-int float_to_signal(float value)
+int from_float(float value)
 {
+    value = std::clamp(value, -1.0f, 1.0f);
     return 1500 + (int)(value * 400);
 }
 

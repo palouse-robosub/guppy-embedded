@@ -3,6 +3,7 @@
 
 #include <pico/stdlib.h>
 #include <cstring>
+#include <type_traits>
 
 extern "C"
 {
@@ -69,23 +70,15 @@ public:
         return true;
     }
 
-    int transmit(uint32_t id, float value)
+    template <typename T>
+    int transmit(uint32_t id, T value)
     {
+        static_assert(std::is_trivially_copyable_v<T>, "Type is not trivially copyable");
+        static_assert(sizeof(T) <= 4, "Type must be at most 4 bytes");
         can2040_msg msg;
         msg.id = id;
-        msg.dlc = sizeof(float);
-        std::memcpy(&msg.data32[0], &value, sizeof(float));
-        int status = can2040_transmit(&can_bus_, &msg);
-
-        return status;
-    }
-
-    int transmit(uint32_t id, int32_t value)
-    {
-        can2040_msg msg;
-        msg.id = id;
-        msg.dlc = sizeof(int32_t);
-        std::memcpy(&msg.data32[0], &value, sizeof(int32_t));
+        msg.dlc = sizeof(T);
+        std::memcpy(&msg.data32[0], &value, sizeof(T));
         int status = can2040_transmit(&can_bus_, &msg);
 
         return status;

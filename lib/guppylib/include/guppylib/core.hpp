@@ -9,7 +9,7 @@
 #include "guppylib/canbus.hpp"
 #include "guppylib/led.hpp"
 #include "guppylib/state.hpp"
-#include "guppylib/ratelimit.hpp"
+#include "guppylib/timer.hpp"
 
 namespace guppylib
 {
@@ -26,7 +26,7 @@ private:
     std::function<void(can2040_msg&, Core&)> can_bus_message_callback_; // called on receiving canbus msg
     int heartbeat_id_;
     CanBus can_bus_;
-    RateLimit<1000> heartbeat_rate_limit_;
+    Timer heartbeat_timer_;
 
     void do_heartbeat();
 
@@ -50,7 +50,7 @@ Core<LEDGroups>::Core(
     const uint32_t heartbeat_id,
     std::unique_ptr<LEDController<LEDGroups>> led_controller
 )
-: led_strip_(std::move(led_controller))
+: led_strip_(std::move(led_controller)), heartbeat_timer_(500)
 {
     can_bus_.setup(can_bus_rx_pin, can_bus_tx_pin);
     heartbeat_id_ = heartbeat_id;
@@ -72,7 +72,7 @@ void Core<LEDGroups>::tick()
 template<size_t LEDGroups>
 void Core<LEDGroups>::do_heartbeat()
 {
-    if (!heartbeat_rate_limit_.has_timeout()) return;
+    if (!heartbeat_timer_.has_timed_out()) return;
 
     int32_t cur_time = to_ms_since_boot(get_absolute_time());
     can_bus_.transmit(heartbeat_id_, cur_time);

@@ -13,7 +13,7 @@ void init_pin(uint pin_num);
 void write(uint pin_num, uint16_t level);
 
 // converts a float from -1.0 to 1.0 into a pwm signal
-int float_to_signal(float value);
+int from_float(float value);
 
 }
 

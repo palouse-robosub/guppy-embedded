@@ -5,7 +5,7 @@ set(PICO_PLATFORM rp2350)
 include(pico_sdk_import.cmake)
 
 project(guppy_embedded)
-set(CMAKE_C_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -37,7 +37,7 @@ target_link_libraries(can2040
 # add libraries
 add_subdirectory(vendor/pico_neopixels) # TODO: update guppylib to not depend on pico_neopixels
 add_subdirectory(vendor/barometer)
-add_subdirectory(lib/guppy_lib)
+add_subdirectory(lib/guppylib)
 
 
 
@@ -52,9 +52,9 @@ function(guppy_init_target TARGET_NAME)
 endfunction()
 
 add_executable(board_motor src/board_motor.cpp)
-target_link_libraries(board_motor guppy_lib)
+target_link_libraries(board_motor guppylib)
 guppy_init_target(board_motor)
 
 add_executable(board_wet src/board_wet.cpp)
-target_link_libraries(board_wet guppy_lib barometer)
+target_link_libraries(board_wet guppylib barometer)
 guppy_init_target(board_wet)
