@@ -10,7 +10,7 @@
 #include <guppylib/timer.hpp>
 #include <guppylib/core.hpp>
 
-#include "board_wet.h"
+#include "board_wet.hpp"
 
 
 
