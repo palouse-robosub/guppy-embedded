@@ -67,6 +67,7 @@ void Core<LEDGroups>::tick()
     {
         led_strip_->update(msg);
     }
+    can_bus_message_callback_(msg, *this);
 }
 
 template<size_t LEDGroups>
