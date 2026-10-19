@@ -21,7 +21,7 @@ class Core
 private:
     static constexpr int update_rate_ms_ = 20; // 50 times a second
 
-    State state_;
+    State state_ = State::Startup;
     std::unique_ptr<LEDController<LEDGroups>> led_strip_;
     std::function<void(can2040_msg&, Core&)> can_bus_message_callback_; // called on receiving canbus msg
     int heartbeat_id_;
