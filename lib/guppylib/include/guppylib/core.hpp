@@ -19,8 +19,6 @@ template <size_t LEDGroups>
 class Core
 {
 private:
-    static constexpr int update_rate_ms_ = 20; // 50 times a second
-
     State state_ = State::Startup;
     std::unique_ptr<LEDController<LEDGroups>> led_strip_;
     std::function<void(can2040_msg&, Core&)> can_bus_message_callback_; // called on receiving canbus msg
@@ -33,8 +31,18 @@ private:
 public:
     Core(uint32_t can_bus_rx_pin, uint32_t can_bus_tx_pin, uint32_t heartbeat_id, std::unique_ptr<LEDController<LEDGroups>> led_controller);
 
+    /**
+     * @brief Should run every loop,
+     * Updates CAN, LEDs, and state!
+     * Also runs callback if CAN has incoming message
+     */
     void tick();
 
+    /**
+     * @brief Sets the callback ran whenever a CAN message is received.
+     * 
+     * @param callback The callback to be ran with signature `void(can2040_msg&, Core&)`
+     */
     void set_can_bus_message_callback(std::function<void(can2040_msg&, Core&)> callback) { can_bus_message_callback_ = callback; }
 
     [[nodiscard]] State get_state() const { return state_; }
