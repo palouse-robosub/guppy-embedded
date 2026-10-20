@@ -17,10 +17,10 @@ template <size_t LED_GROUP_COUNT>
 class LEDController
 {
 public:
-    State state;
+    State state_;
     /// Groups of LEDs in a row of a continuous color
-    size_t led_groups[LED_GROUP_COUNT];
-    uint8_t brightness = 35;
+    size_t led_groups_[LED_GROUP_COUNT];
+    uint8_t brightness_ = 35;
     /// `pin` is the gpio pin the LED line data is connected to
     /// `groups` is a list of lengths of LED groups
     explicit LEDController(int pin, const size_t groups[LED_GROUP_COUNT]);
@@ -28,7 +28,13 @@ public:
     void tick();
     /// Updates LEDController based on the provided CAN message
     /// (does care about CAN ID and will ignore messages from most IDs)
-    bool update(const struct can2040_msg& msg);
+    void set_state(State new_state);
+    /**
+     * @brief Set the brightness of the LEDs.
+     * 
+     * @param new_brightness int from 0 to 255.
+     */
+    void set_brightness(uint8_t new_brightness);
 private:
     int tick_count_;
     Adafruit_NeoPixel led_strip_;
@@ -41,15 +47,15 @@ private:
     void teleop();
     void disabled();
     void fault();
-    [[nodiscard]] constexpr uint32_t color_white()  const { return Adafruit_NeoPixel::Color(brightness,  brightness,  brightness  ); }
-    [[nodiscard]] constexpr uint32_t color_grey()   const { return Adafruit_NeoPixel::Color(brightness/2,brightness/2,brightness/2); }
-    [[nodiscard]] constexpr uint32_t color_red()    const { return Adafruit_NeoPixel::Color(brightness,  0,           0           ); }
-    [[nodiscard]] constexpr uint32_t color_green()  const { return Adafruit_NeoPixel::Color(0,           brightness,  0           ); }
-    [[nodiscard]] constexpr uint32_t color_blue()   const { return Adafruit_NeoPixel::Color(0,           0,           brightness  ); }
-    [[nodiscard]] constexpr uint32_t color_yellow() const { return Adafruit_NeoPixel::Color(brightness,  brightness,  0           ); }
-    [[nodiscard]] constexpr uint32_t orange()       const { return Adafruit_NeoPixel::Color(brightness,  brightness/2,0           ); }
-    [[nodiscard]] constexpr uint32_t purple()       const { return Adafruit_NeoPixel::Color(brightness/2,0,           brightness  ); }
-    [[nodiscard]] constexpr uint32_t color_off()    const { return Adafruit_NeoPixel::Color(0,           0,           0           ); }
+    [[nodiscard]] constexpr uint32_t color_white()  const { return Adafruit_NeoPixel::Color(brightness_,  brightness_,  brightness_  ); }
+    [[nodiscard]] constexpr uint32_t color_grey()   const { return Adafruit_NeoPixel::Color(brightness_/2,brightness_/2,brightness_/2); }
+    [[nodiscard]] constexpr uint32_t color_red()    const { return Adafruit_NeoPixel::Color(brightness_,  0,            0            ); }
+    [[nodiscard]] constexpr uint32_t color_green()  const { return Adafruit_NeoPixel::Color(0,            brightness_,  0            ); }
+    [[nodiscard]] constexpr uint32_t color_blue()   const { return Adafruit_NeoPixel::Color(0,            0,            brightness_  ); }
+    [[nodiscard]] constexpr uint32_t color_yellow() const { return Adafruit_NeoPixel::Color(brightness_,  brightness_,  0            ); }
+    [[nodiscard]] constexpr uint32_t orange()       const { return Adafruit_NeoPixel::Color(brightness_,  brightness_/2,0            ); }
+    [[nodiscard]] constexpr uint32_t purple()       const { return Adafruit_NeoPixel::Color(brightness_/2,0,            brightness_  ); }
+    [[nodiscard]] constexpr uint32_t color_off()    const { return Adafruit_NeoPixel::Color(0,            0,            0            ); }
 };
 
 template <size_t LED_GROUP_COUNT>
@@ -58,7 +64,7 @@ LEDController<LED_GROUP_COUNT>::LEDController(int pin, const size_t groups[LED_G
 {
     uint16_t total_leds = 0;
     for (size_t i = 0; i < LED_GROUP_COUNT; i++) {
-        led_groups[i] = groups[i];
+        led_groups_[i] = groups[i];
         total_leds += groups[i];
     }
     // led_strip = Adafruit_NeoPixel(total_leds, pin, NEO_GRB + NEO_KHZ800);
@@ -67,7 +73,7 @@ LEDController<LED_GROUP_COUNT>::LEDController(int pin, const size_t groups[LED_G
     //for (int i = 0; i < 122; i++) led_strip.setPixelColor(i, this->color_green());
 
     tick_count_ = 0;
-    state = State::Startup;
+    state_ = State::Startup;
 }
 
 template <size_t LED_GROUP_COUNT>
@@ -76,40 +82,28 @@ void LEDController<LED_GROUP_COUNT>::two_color(uint32_t color1, uint32_t color2)
     int led_index = 0;
     for (int i = 0; i < LED_GROUP_COUNT; i++)
     {
-        for (int j = 0; j < led_groups[i]; j++) {
-            if (j < led_groups[i] / 2)
+        for (int j = 0; j < led_groups_[i]; j++) {
+            if (j < led_groups_[i] / 2)
                 led_strip_.setPixelColor(led_index + j, color1);
             else 
                 led_strip_.setPixelColor(led_index + j, color2);
         }
-        led_index += led_groups[i];
+        led_index += led_groups_[i];
     }
 }
 
 template <size_t LED_GROUP_COUNT>
-bool LEDController<LED_GROUP_COUNT>::update(const can2040_msg& msg)
+void LEDController<LED_GROUP_COUNT>::set_state(const State new_state)
 {
-    if (msg.id == 0x201) // CAN ID Spreadsheet `current state`
-    {
-        State new_state = static_cast<State>(CanBus::parse_int(msg));
-        if (new_state != state)
-        {
-            // we want to synchronize the timing for each hull
-            // TODO: on startup, rate limit should be 10ms instead of 250ms? fixes desync apparently
-            tick_count_ = 0;
-            state = new_state;
-        }
-        return true;
-    }
-    if (msg.id == 0x021) // CAN ID Spreadsheet `led brightness`
-    {
-        float brightness_float = CanBus::parse_float(msg);
-        if (brightness_float > 1.0) brightness_float = 1.0;
-        if (brightness_float < 0.0) brightness_float = 0.0;
-        brightness = static_cast<uint8_t>(brightness_float * 255.0);
-        return true;
-    }
-    else return false;
+    if (new_state == state_) return;
+    state_ = new_state;
+    tick_count_ = 0;
+}
+
+template <size_t LED_GROUP_COUNT>
+void LEDController<LED_GROUP_COUNT>::set_brightness(const uint8_t new_brightness)
+{
+    brightness_ = new_brightness;
 }
 
 template <size_t LED_GROUP_COUNT>
@@ -118,7 +112,7 @@ void LEDController<LED_GROUP_COUNT>::tick()
     if (!rate_limit_.check())
         return;
 
-    switch (state)
+    switch (state_)
     {
         case State::Startup:  this->startup();  break;
         case State::Holding:  this->holding();  break;
@@ -140,8 +134,8 @@ void LEDController<LED_GROUP_COUNT>::startup()
     int led_index = 0;
     for (int i = 0; i < LED_GROUP_COUNT; i++)
     {
-        for (int j = 0; j < led_groups[i]; j++) {
-            size_t n = led_groups[i];
+        for (int j = 0; j < led_groups_[i]; j++) {
+            size_t n = led_groups_[i];
             // creates patterns like 1 2 3 4 3 2 1 2 3 4 3 ...
             size_t center = tick_count_ % (2 * n - 2) + 1;
             if (center > n) center = 2 * n - center;
@@ -155,7 +149,7 @@ void LEDController<LED_GROUP_COUNT>::startup()
             else
                 led_strip_.setPixelColor(led_index+j, this->color_off());
         }
-        led_index += led_groups[i];
+        led_index += led_groups_[i];
     }
 }
 template <size_t LED_GROUP_COUNT>

@@ -58,6 +58,8 @@ public:
      * @return CanBus& 
      */
     CanBus& can_bus() { return can_bus_; }
+
+    void update_state(const can2040_msg& msg);
 };
 
 
@@ -75,6 +77,23 @@ Core<LEDGroups>::Core(
     heartbeat_id_ = heartbeat_id;
 }
 
+template <size_t LEDGroups>
+inline void Core<LEDGroups>::update_state(const can2040_msg &msg)
+{
+    if (msg.id == 0x201)
+    {
+        state_ = static_cast<State>(CanBus::parse_int(msg));
+        led_strip_->set_state(state_);
+    }
+    else if (msg.id == 0x021)
+    {
+        float brightness_float = CanBus::parse_float(msg);
+        if (brightness_float > 1.0) brightness_float = 1.0;
+        if (brightness_float < 0.0) brightness_float = 0.0;
+        led_strip_->set_brightness(static_cast<uint8_t>(brightness_float * 255.0));
+    }
+}
+
 template<size_t LEDGroups>
 void Core<LEDGroups>::tick()
 {
@@ -84,7 +103,7 @@ void Core<LEDGroups>::tick()
     can2040_msg msg;
     if (can_bus_.read(&msg))
     {
-        led_strip_->update(msg);
+        update_state(msg);
         can_bus_message_callback_(msg, *this);
     }
 }
