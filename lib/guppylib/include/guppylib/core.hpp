@@ -45,7 +45,18 @@ public:
      */
     void set_can_bus_message_callback(std::function<void(can2040_msg&, Core&)> callback) { can_bus_message_callback_ = callback; }
 
+    /**
+     * @brief Get the current state.
+     * 
+     * @return State 
+     */
     [[nodiscard]] State get_state() const { return state_; }
+
+    /**
+     * @brief Get CAN bus instance.
+     * 
+     * @return CanBus& 
+     */
     CanBus& can_bus() { return can_bus_; }
 };
 

@@ -39,6 +39,12 @@ public:
         instance_ = this; 
     }
 
+    /**
+     * @brief Sets up the can bus
+     * 
+     * @param gpio_rx pin number for receiving (rx)
+     * @param gpio_tx pin number for transmitting (tx)
+     */
     void setup(const uint32_t gpio_rx = 8, const uint32_t gpio_tx = 9)
     {
         uint32_t pio_num = 2;
@@ -57,6 +63,12 @@ public:
         can2040_start(&can_bus_, sys_clock, bitrate, gpio_rx, gpio_tx);
     }
 
+    /**
+     * @brief Tries to read an incoming message, and sets `msg` to the incoming message
+     * 
+     * @param msg the message struct to be written to
+     * @return true if there is an incoming message
+     */
     bool read(can2040_msg *msg)
     {
         const uint32_t push_pos = message_queue_.push_pos;
@@ -70,6 +82,14 @@ public:
         return true;
     }
 
+    /**
+     * @brief Transmits a value over CAN. 
+     * 
+     * @tparam T Type of data to send, must be at most 4 bytes.
+     * @param id CAN id to send
+     * @param value Value to send over CAN
+     * @return Status code, 0 is good
+     */
     template <typename T>
     int transmit(uint32_t id, T value)
     {
@@ -84,6 +104,12 @@ public:
         return status;
     }
 
+    /**
+     * @brief Parses a `can2040_msg` as a float
+     * 
+     * @param msg Message to parse.
+     * @return float 
+     */
     static float parse_float(const can2040_msg& msg)
     {
         float value;
@@ -92,6 +118,12 @@ public:
         return value;
     }
 
+    /**
+     * @brief Parses a `can2040_msg` as an int
+     * 
+     * @param msg Message to parse.
+     * @return int32_t 
+     */
     static int32_t parse_int(const can2040_msg& msg)
     {
         int32_t value;
