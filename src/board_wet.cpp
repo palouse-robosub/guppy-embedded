@@ -74,7 +74,7 @@ void board_wet_loop()
     {
         context.tick();
 
-        if (publish_timer.has_timed_out())
+        if (publish_timer.check())
         {
             /* transmit sensor values */
             if (sensor.read())

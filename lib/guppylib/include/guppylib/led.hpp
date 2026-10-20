@@ -115,7 +115,7 @@ bool LEDController<LED_GROUP_COUNT>::update(const can2040_msg& msg)
 template <size_t LED_GROUP_COUNT>
 void LEDController<LED_GROUP_COUNT>::tick()
 {
-    if (!rate_limit_.has_timed_out())
+    if (!rate_limit_.check())
         return;
 
     switch (state)

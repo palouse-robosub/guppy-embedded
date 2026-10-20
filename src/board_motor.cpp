@@ -84,7 +84,7 @@ void board_motor_loop()
     {
         context.tick();
 
-        if (estop_rate_limit.has_timed_out())
+        if (estop_rate_limit.check())
         {
             estop_triggered = gpio::read(estop_pin);
             context.can_bus().transmit(estop_triggered_id, static_cast<int32_t>(estop_triggered)); 
@@ -95,7 +95,7 @@ void board_motor_loop()
         /* set stale motors to 0 */
         for (int i = 0; i < num_motors; i++)
         {
-            if (last_updates[i].has_timed_out()) 
+            if (last_updates[i].check()) 
             {
                 pwm::write(motor_pins[i], pwm::from_float(0.0));
             }

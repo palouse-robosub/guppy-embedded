@@ -81,7 +81,7 @@ void Core<LEDGroups>::tick()
 template<size_t LEDGroups>
 void Core<LEDGroups>::do_heartbeat()
 {
-    if (!heartbeat_timer_.has_timed_out()) return;
+    if (!heartbeat_timer_.check()) return;
 
     int32_t cur_time = to_ms_since_boot(get_absolute_time());
     can_bus_.transmit(heartbeat_id_, cur_time);

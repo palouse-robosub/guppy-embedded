@@ -8,7 +8,7 @@ Timer::Timer(const uint32_t timeout_ms)
     timeout_ms_ = timeout_ms;
 }
 
-bool Timer::has_timed_out()
+bool Timer::check()
 {
     const uint32_t cur_ms = to_ms_since_boot(get_absolute_time());
     if (cur_ms - last_timeout_ms_ < timeout_ms_) return false;
