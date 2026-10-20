@@ -59,6 +59,11 @@ public:
      */
     CanBus& can_bus() { return can_bus_; }
 
+    /**
+     * @brief Updates state from a CAN message and passes state/brightness to LED strip.
+     * 
+     * @param msg
+     */
     void update_state(const can2040_msg& msg);
 };
 
