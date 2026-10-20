@@ -6,12 +6,8 @@
 #include "guppylib/state.hpp"
 #include "guppylib/timer.hpp"
 
-#define BRIGHTNESS 50 // brightness of pixels out of 255
-
 namespace guppylib
 {
-
-
 
 template <size_t LED_GROUP_COUNT>
 class LEDController
@@ -21,14 +17,28 @@ public:
     /// Groups of LEDs in a row of a continuous color
     size_t led_groups_[LED_GROUP_COUNT];
     uint8_t brightness_ = 35;
-    /// `pin` is the gpio pin the LED line data is connected to
-    /// `groups` is a list of lengths of LED groups
+
+    /**
+     * @brief Construct a new LEDController object in the Startup state initially.
+     * 
+     * @param pin Pin number of the LED strip.
+     * @param groups Array of the lengths of each section in the LED strip. Used in startup pattern.
+     */
     explicit LEDController(int pin, const size_t groups[LED_GROUP_COUNT]);
-    /// Updates the LED strip
+
+    /**
+     * @brief Updates LED strip pattern
+     * 
+     */
     void tick();
-    /// Updates LEDController based on the provided CAN message
-    /// (does care about CAN ID and will ignore messages from most IDs)
+    
+    /**
+     * @brief Set the state object
+     * 
+     * @param new_state 
+     */
     void set_state(State new_state);
+
     /**
      * @brief Set the brightness of the LEDs.
      * 
