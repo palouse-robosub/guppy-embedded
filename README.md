@@ -42,20 +42,19 @@ picotool load -f board_[board-name].uf2
 You may have to manually put the microcontroller into bootsel mode if it's being uncooperative.
 
 ## Organization
- 
-- `/lib`: Libraries (`led` and `guppy_lib` are bespoke)
-- `/src/modules`: Board-specific code
-- `/src/main.cpp`: Entrypoint
 
+- `/vendor` Vendored libraries we use
+- `/lib`: Our own libraries (shared and general code)
+- `/src`: Board-specific code
 ## Contributing
 
 ### To contribute code:
 
 1. Make a new branch with the format `name/feature_name` such as `adrian/add_status_led` and make all changes in that branch.
-2. Make a Pull Request to the `main` branch and request `@guppyadrian` as a reviewer.
-3. Make sure all commits have proper messages starting with `feat:`, `chore:`, or `fix:`
+2. Make a Pull Request to the `main` branch and request `@guppyadrian` or `@GoldenGuy1000` as a reviewer.
+3. Make sure all commits have messages starting with `feat:`, `chore:`, or `fix:`
 4. Document and comment all of your code!
-5. Ensure your code works before merging into main!
+5. Ensure your code works before merging into main! (ask for help testing it if you're unsure)
 
 ## Contact and Sponsorship
 
