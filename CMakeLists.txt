@@ -5,13 +5,13 @@ set(PICO_PLATFORM rp2350)
 include(pico_sdk_import.cmake)
 
 project(guppy_embedded)
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 pico_sdk_init()
 
-# Add can2040 lib
+# Add can2040 lib  TODO: don't use fetchcontent just add to vendor folder
 include(FetchContent)
 
 FetchContent_Declare(
@@ -35,45 +35,26 @@ target_link_libraries(can2040
 )
 
 # add libraries
-add_subdirectory(lib/pico_neopixels)
-add_subdirectory(lib/led)
-add_subdirectory(lib/barometer)
-add_subdirectory(lib/guppy_lib)
+add_subdirectory(vendor/pico_neopixels) # TODO: update guppylib to not depend on pico_neopixels
+add_subdirectory(vendor/barometer)
+add_subdirectory(lib/guppylib)
 
-# add stuff from modules folder
-file(GLOB MODULE_SOURCES
-    src/modules/*.c
-    src/modules/*.cpp
-)
 
-function(add_board BOARD_NAME BOARD_TYPE)
 
-    add_executable(${BOARD_NAME}
-        src/main.cpp
-        ${MODULE_SOURCES}
-    )
+function(guppy_init_target TARGET_NAME)
+    target_include_directories(${TARGET_NAME} PRIVATE include)
 
-    pico_set_binary_type(${BOARD_NAME} copy_to_ram)
-    target_link_libraries(${BOARD_NAME}
-        pico_stdlib
-        can2040
-        guppy_lib
-        pico_neopixel
-        led_strip
-        barometer
-    )
-
-    target_compile_definitions(${BOARD_NAME} PRIVATE BOARD_TYPE=${BOARD_TYPE})
-    
-    pico_enable_stdio_usb(${BOARD_NAME} 1)
-    pico_enable_stdio_uart(${BOARD_NAME} 0)
+    pico_set_binary_type(${TARGET_NAME} copy_to_ram)
+    pico_enable_stdio_usb(${TARGET_NAME} 1)
+    pico_enable_stdio_uart(${TARGET_NAME} 0)
+    pico_add_extra_outputs(${TARGET_NAME})
 
 endfunction()
 
-add_board(board_motor 1)
-add_board(board_wet 2)
-add_board(board_test -1)
+add_executable(board_motor src/board_motor.cpp)
+target_link_libraries(board_motor guppylib)
+guppy_init_target(board_motor)
 
-pico_add_extra_outputs(board_motor)
-pico_add_extra_outputs(board_wet)
-pico_add_extra_outputs(board_test)
+add_executable(board_wet src/board_wet.cpp)
+target_link_libraries(board_wet guppylib barometer)
+guppy_init_target(board_wet)

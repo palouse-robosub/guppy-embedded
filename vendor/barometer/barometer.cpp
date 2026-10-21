@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 -------------------------------*/
 
-#include "barometer.h"
+#include "bluerobotics/barometer.h"
 #include <math.h>
 #include <iostream>
 
