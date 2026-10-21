@@ -22,7 +22,7 @@ public:
      * @brief Construct a new LEDController object in the Startup state initially.
      * 
      * @param pin Pin number of the LED strip.
-     * @param groups Array of the lengths of each section in the LED strip. Used in startup pattern.
+     * @param groups Array of the lengths of each section in the LED strip. Used in some patterns.
      */
     explicit LEDController(int pin, const size_t groups[LED_GROUP_COUNT]);
 
