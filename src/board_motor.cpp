@@ -1,10 +1,13 @@
 #include <pico/stdlib.h>
 #include <array>
 #include <algorithm>
+#include <cstdio>
+#include <optional>
 
 #include <guppylib/guppylib.hpp>
 
 #include "board_motor.hpp"
+#include "firmware_version.hpp"
 
 using namespace guppylib;
 
@@ -16,6 +19,8 @@ constexpr uint8_t estop_pin = 29;
 constexpr uint8_t led_pin = 28;
 
 constexpr uint16_t motor_board_heartbeat_id = 0x010;
+// TODO: assign a dedicated CAN ID. Leave unset to disable version reports.
+constexpr std::optional<uint16_t> motor_board_version_id = std::nullopt;
 constexpr uint16_t motor_board_id = 0x410;
 constexpr uint16_t estop_triggered_id = 0x01B;
 // constexpr uint16_t torpedo_servo_id = 0x019;
@@ -80,9 +85,29 @@ void board_motor_loop()
         pwm::init_pin(motor_pins[i]);
     }
 
+    // Parse once at startup; report malformed tags without stopping board work.
+    const uint32_t packed_version = firmware_version::parse(PICO_PROGRAM_VERSION_STRING);
+    if (packed_version == 0xFFFFFFFFu)
+    {
+        std::printf("Invalid firmware version '%s': expected v.XX.XX.XX; "
+                    "version reporting disabled.\n", PICO_PROGRAM_VERSION_STRING);
+    }
+
+    Timer version_timer(firmware_version::report_interval_ms);
+    version_timer.reset();
+    if (packed_version != 0xFFFFFFFFu && motor_board_version_id)
+    {
+        context.can_bus().transmit(*motor_board_version_id, packed_version);
+    }
+
     while (true)
     {
         context.tick();
+
+        if (packed_version != 0xFFFFFFFFu && motor_board_version_id && version_timer.check())
+        {
+            context.can_bus().transmit(*motor_board_version_id, packed_version);
+        }
 
         if (estop_rate_limit.check())
         {
