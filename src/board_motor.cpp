@@ -19,8 +19,8 @@ constexpr uint8_t estop_pin = 29;
 constexpr uint8_t led_pin = 28;
 
 constexpr uint16_t motor_board_heartbeat_id = 0x010;
-// TODO: assign a dedicated CAN ID. Leave unset to disable version reports.
-constexpr std::optional<uint16_t> motor_board_version_id = std::nullopt;
+// TODO: assign a dedicated CAN ID. Currently just a placeholder.
+constexpr std::optional<uint16_t> motor_board_version_id = 0x111;
 constexpr uint16_t motor_board_id = 0x410;
 constexpr uint16_t estop_triggered_id = 0x01B;
 // constexpr uint16_t torpedo_servo_id = 0x019;
@@ -86,16 +86,15 @@ void board_motor_loop()
     }
 
     // Parse once at startup; report malformed tags without stopping board work.
-    const uint32_t packed_version = firmware_version::parse(PICO_PROGRAM_VERSION_STRING);
+    constexpr uint32_t packed_version = firmware_version::parse(PICO_PROGRAM_VERSION_STRING);
     if (packed_version == 0xFFFFFFFFu)
     {
-        std::printf("Invalid firmware version '%s': expected v.XX.XX.XX; "
-                    "version reporting disabled.\n", PICO_PROGRAM_VERSION_STRING);
+        std::printf("Invalid firmware version format, expected v.XX.XX.XX\n");
     }
 
-    Timer version_timer(firmware_version::report_interval_ms);
+    Timer version_timer(1000);
     version_timer.reset();
-    if (packed_version != 0xFFFFFFFFu && motor_board_version_id)
+    if (motor_board_version_id)
     {
         context.can_bus().transmit(*motor_board_version_id, packed_version);
     }
@@ -104,6 +103,7 @@ void board_motor_loop()
     {
         context.tick();
 
+        /* transmit version value */
         if (packed_version != 0xFFFFFFFFu && motor_board_version_id && version_timer.check())
         {
             context.can_bus().transmit(*motor_board_version_id, packed_version);

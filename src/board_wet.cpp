@@ -76,7 +76,7 @@ void board_wet_loop()
     Core<3> context(8, 9, 0x020, std::move(led_controller));
 
     // Parse once at startup; report malformed tags without stopping board work.
-    const uint32_t packed_version = firmware_version::parse(PICO_PROGRAM_VERSION_STRING);
+    constexpr uint32_t packed_version = firmware_version::parse(PICO_PROGRAM_VERSION_STRING);
     if (packed_version == 0xFFFFFFFFu)
     {
         std::printf("Invalid firmware version format, expected v.XX.XX.XX\n");
@@ -93,6 +93,7 @@ void board_wet_loop()
     {
         context.tick();
 
+        /* transmit version value */
         if (packed_version != 0xFFFFFFFFu && wet_board_version_id && version_timer.check())
         {
             context.can_bus().transmit(*wet_board_version_id, packed_version);

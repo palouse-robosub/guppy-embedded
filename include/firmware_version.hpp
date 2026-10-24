@@ -1,40 +1,64 @@
 #ifndef GUPPY_EMBEDDED_FIRMWARE_VERSION_HPP
 #define GUPPY_EMBEDDED_FIRMWARE_VERSION_HPP
 
+#include <cstddef>
+#include <cstdint>
 #include <string_view>
 
 namespace firmware_version
 {
 
-/**
- * Parse v.XX.XX.XX, with exactly two decimal digits per component.
- * Pack the version as 0x00MMmmpp (major, minor, patch).
- * Return 0xFFFFFFFFu on error (if version format is wrong).
- */
-constexpr std::uint32_t parse(std::string_view text)
-{
-    if (text.size() != 10 || text[0] != 'v' || text[1] != '.'
-        || text[4] != '.' || text[7] != '.')
+    /**
+    * Parse v.X.Y.Z, where each component can be 0 to 255 (for example v.1.25.134).
+    * Pack the version as 0x00MMmmpp (major, minor, patch).
+    * Return 0xFFFFFFFFu on error (if the version format is wrong).
+    */
+    constexpr std::uint32_t parse(std::string_view text)
     {
-        return 0xFFFFFFFFu;
-    }
-
-    std::uint32_t packed = 0;
-    for (int position = 2; position < text.size(); position += 3)
-    {
-        const char tens = text[position];
-        const char units = text[position + 1];
-        if (tens < '0' || tens > '9' || units < '0' || units > '9')
+        if (text.size() < 7 || text[0] != 'v' || text[1] != '.' || text.back() == '.')
         {
             return 0xFFFFFFFFu;
         }
 
-        const int component = std::stoi(std::string(text.substr(position, 2)));
-        packed = (packed << 8) | component;
-    }
+        std::uint32_t packed = 0;
+        int components = 0;
+        for (std::size_t position = 2; position < text.size(); ++position)
+        {
+            const std::size_t start = position;
+            std::uint32_t component = 0;
+            while (position < text.size() && text[position] != '.')
+            {
+                const char digit = text[position];
+                if (digit < '0' || digit > '9')
+                {
+                    return 0xFFFFFFFFu;
+                }
 
-    return packed;
-}
+                component = component * 10 + (digit - '0');
+                if (component > 0xFF)
+                {
+                    return 0xFFFFFFFFu;
+                }
+
+                ++position;
+            }
+
+            if (position == start) // empty component, e.g. "v.1..2"
+            {
+                return 0xFFFFFFFFu;
+            }
+
+            packed = (packed << 8) | component;
+            ++components;
+        }
+
+        if (components != 3)
+        {
+            return 0xFFFFFFFFu;
+        }
+
+        return packed;
+    }
 
 } // namespace firmware_version
 
