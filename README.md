@@ -39,7 +39,11 @@ To start, plug in the board to your computer.
 ```sh
 picotool load -f board_[board-name].uf2
 ```
-You may have to manually put the microcontroller into bootsel mode if it's being uncooperative.
+- You may have to manually put the microcontroller into bootsel mode if it's being uncooperative.
+```sh
+picotool load -f --ignore-partitions board_[board-name].uf2
+```
+- `--ignore-partitions` is only necessary if the board is flashed with a partition table and you want to override it.
 
 ## Organization
 
