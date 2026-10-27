@@ -75,16 +75,17 @@ void board_wet_loop()
 
     Core<3> context(8, 9, 0x020, std::move(led_controller));
 
-    // Parse once at startup; report malformed tags without stopping board work.
+    // Parse once at startup; report malformed tags without stopping board work
     constexpr uint32_t packed_version = firmware_version::parse(PICO_PROGRAM_VERSION_STRING);
-    if (packed_version == 0xFFFFFFFFu)
+    if ((packed_version & 0xFFFF0000u) == 0xFFFF0000u)
     {
         std::printf("Invalid firmware version format, expected v.XX.XX.XX\n");
     }
 
+    // timer to send the version every second, if the version is valid and the CAN ID is set 
     Timer version_timer(1000);
     version_timer.reset();
-    if (packed_version != 0xFFFFFFFFu && wet_board_version_id)
+    if ((packed_version & 0xFFFF0000u) != 0xFFFF0000u && wet_board_version_id)
     {
         context.can_bus().transmit(*wet_board_version_id, packed_version);
     }
@@ -93,8 +94,8 @@ void board_wet_loop()
     {
         context.tick();
 
-        /* transmit version value */
-        if (packed_version != 0xFFFFFFFFu && wet_board_version_id && version_timer.check())
+        // transmit version value if the version is valid, the CAN ID is set, and the timer has elapsed
+        if ((packed_version & 0xFFFF0000u) != 0xFFFF0000u && wet_board_version_id && version_timer.check())
         {
             context.can_bus().transmit(*wet_board_version_id, packed_version);
         }

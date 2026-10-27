@@ -87,7 +87,7 @@ void board_motor_loop()
 
     // Parse once at startup; report malformed tags without stopping board work.
     constexpr uint32_t packed_version = firmware_version::parse(PICO_PROGRAM_VERSION_STRING);
-    if (packed_version == 0xFFFFFFFFu)
+    if ((packed_version & 0xFFFF0000u) == 0xFFFF0000u)
     {
         std::printf("Invalid firmware version format, expected v.XX.XX.XX\n");
     }
@@ -95,7 +95,7 @@ void board_motor_loop()
     // timer to send the version every second, if the version is valid and the CAN ID is set 
     Timer version_timer(1000);
     version_timer.reset();
-    if (motor_board_version_id)
+    if ((packed_version & 0xFFFF0000u) != 0xFFFF0000u && motor_board_version_id)
     {
         context.can_bus().transmit(*motor_board_version_id, packed_version);
     }
@@ -105,7 +105,7 @@ void board_motor_loop()
         context.tick();
 
         // transmit version value if the version is valid, the CAN ID is set, and the timer has elapsed
-        if (packed_version != 0xFFFFFFFFu && motor_board_version_id && version_timer.check())
+        if ((packed_version & 0xFFFF0000u) != 0xFFFF0000u && motor_board_version_id && version_timer.check())
         {
             context.can_bus().transmit(*motor_board_version_id, packed_version);
         }
