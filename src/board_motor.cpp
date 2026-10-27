@@ -91,14 +91,14 @@ void board_motor_loop()
         std::printf("Invalid firmware version format, expected v.XX.XX.XX\n");
     }
 
-    // timer to send the version every second, if the version is valid and the CAN ID is set 
+    // timer to send the version every second
     Timer version_timer(1000);
 
     while (true)
     {
         context.tick();
 
-        // transmit version value if the version is valid, the CAN ID is set, and the timer has elapsed
+        // transmit version value or error
         if (version_timer.check())
         {
             context.can_bus().transmit(motor_board_version_id, packed_version);
