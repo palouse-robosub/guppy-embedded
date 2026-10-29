@@ -11,6 +11,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 pico_sdk_init()
 
+# gets the version from most recent tag, git describe command
+find_package(Git REQUIRED)
+
+set(GUPPY_EMBEDDED_VERSION "unknown")
+# runs git command, strips whitespace, puts output into GUPPY_EMBEDDED_VERSION
+execute_process(
+    COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    OUTPUT_VARIABLE GUPPY_EMBEDDED_VERSION
+)
+
+
 # Add can2040 lib  TODO: don't use fetchcontent just add to vendor folder
 include(FetchContent)
 
@@ -43,6 +56,10 @@ add_subdirectory(lib/guppylib)
 
 function(guppy_init_target TARGET_NAME)
     target_include_directories(${TARGET_NAME} PRIVATE include)
+
+    #pico_set_program_version embeds a version string into compiled binary
+    #can look at version with picotool info
+    pico_set_program_version(${TARGET_NAME} "${GUPPY_EMBEDDED_VERSION}")
 
     pico_set_binary_type(${TARGET_NAME} copy_to_ram)
     pico_enable_stdio_usb(${TARGET_NAME} 1)

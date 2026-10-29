@@ -1,10 +1,13 @@
 #include <pico/stdlib.h>
 #include <array>
 #include <algorithm>
+#include <cstdio>
+#include <optional>
 
 #include <guppylib/guppylib.hpp>
 
 #include "board_motor.hpp"
+#include "firmware_version.hpp"
 
 using namespace guppylib;
 
@@ -16,6 +19,7 @@ constexpr uint8_t estop_pin = 29;
 constexpr uint8_t led_pin = 28;
 
 constexpr uint16_t motor_board_heartbeat_id = 0x010;
+constexpr uint16_t motor_board_version_id = 0x01C;
 constexpr uint16_t motor_board_id = 0x410;
 constexpr uint16_t estop_triggered_id = 0x01B;
 // constexpr uint16_t torpedo_servo_id = 0x019;
@@ -80,9 +84,25 @@ void board_motor_loop()
         pwm::init_pin(motor_pins[i]);
     }
 
+    // Parse once at startup; report malformed tags without stopping board work.
+    constexpr uint32_t packed_version = firmware_version::parse(PICO_PROGRAM_VERSION_STRING);
+    if ((packed_version & 0xFF000000u) == 0xFF000000u)
+    {
+        std::printf("Invalid firmware version format, expected v.XX.XX.XX\n");
+    }
+
+    // timer to send the version every second
+    Timer version_timer(1000);
+
     while (true)
     {
         context.tick();
+
+        // transmit version value or error
+        if (version_timer.check())
+        {
+            context.can_bus().transmit(motor_board_version_id, packed_version);
+        }
 
         if (estop_rate_limit.check())
         {
