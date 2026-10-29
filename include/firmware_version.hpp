@@ -9,7 +9,7 @@ namespace firmware_version
 {
 
     /** @brief Parse a firmware version string
-     *  @param text The version string to parse, expected in the format "v.X.Y.Z" where X, Y, and Z are decimal numbers 0 to 255
+     *  @param text The version string to parse, expected in the format "vX.Y.Z" where X, Y, and Z are decimal numbers 0 to 255
      *  @return The packed version number, or an error with upper bytes 0xFF:
      *  0xFF000001u: invalid length, prefix, or trailing separator
      *  0xFF000002u: non-digit character in a component
@@ -20,7 +20,7 @@ namespace firmware_version
     constexpr uint32_t parse(std::string_view text)
     {
         // check for minimum length and starts with v
-        if (text.size() < 7 || text[0] != 'v' || text[1] != '.' || text.back() == '.')
+        if (text.size() < 6 || text[0] != 'v' || text.back() == '.')
         {
             return 0xFF000001u;
         }
@@ -28,7 +28,7 @@ namespace firmware_version
         // parse each component
         uint32_t packed = 0;
         int components = 0;
-        for (size_t position = 2; position < text.size(); ++position)
+        for (size_t position = 1; position < text.size(); ++position)
         {
             const size_t start = position;
             uint32_t component = 0;

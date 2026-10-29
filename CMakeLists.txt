@@ -17,7 +17,7 @@ find_package(Git REQUIRED)
 set(GUPPY_EMBEDDED_VERSION "unknown")
 # runs git command, strips whitespace, puts output into GUPPY_EMBEDDED_VERSION
 execute_process(
-    COMMAND ${GIT_EXECUTABLE} describe --tags
+    COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     OUTPUT_STRIP_TRAILING_WHITESPACE
     OUTPUT_VARIABLE GUPPY_EMBEDDED_VERSION
