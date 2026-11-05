@@ -21,6 +21,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(can2040)
 
+FetchContent_Declare(
+        can_xml
+        GIT_REPOSITORY https://github.com/palouse-robosub/can-xml.git
+        GIT_TAG main
+        SOURCE_SUBDIR no_cmake_here
+)
+FetchContent_MakeAvailable(can_xml)
+
 add_library(can2040 STATIC
     ${can2040_SOURCE_DIR}/src/can2040.c
 )
@@ -35,7 +43,7 @@ target_link_libraries(can2040
 
 include(ExternalProject)
 ExternalProject_Add(guppy_codegen
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/codegen
+    SOURCE_DIR ${can_xml_SOURCE_DIR}
     BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/guppy-codegen
     CMAKE_ARGS
     -DCMAKE_C_COMPILER=cc
