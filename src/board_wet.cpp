@@ -1,6 +1,8 @@
 #include <pico/stdlib.h>
 #include <iostream>
 #include <memory>
+#include <cstdio>
+#include <optional>
 #include <bluerobotics/barometer.h>
 
 #include <guppylib/core.hpp>
@@ -11,6 +13,7 @@
 #include <guppylib/core.hpp>
 
 #include "board_wet.hpp"
+#include "firmware_version.hpp"
 
 
 
@@ -21,6 +24,8 @@
 constexpr uint16_t switch_one_pin = 26;
 constexpr uint16_t switch_two_pin = 19;
 constexpr uint16_t led_pin = 20;
+
+constexpr uint16_t wet_board_version_id = 0x02A;
 
 using namespace guppylib;
 
@@ -70,9 +75,25 @@ void board_wet_loop()
 
     Core<3> context(8, 9, 0x020, std::move(led_controller));
 
+    // Parse once at startup; report malformed tags without stopping board work
+    constexpr uint32_t packed_version = firmware_version::parse(PICO_PROGRAM_VERSION_STRING);
+    if ((packed_version & 0xFF000000u) == 0xFF000000u)
+    {
+        std::printf("Invalid firmware version format, expected v.XX.XX.XX\n");
+    }
+
+    // timer to send the version every second
+    Timer version_timer(1000);
+
     while (true)
     {
         context.tick();
+
+        // transmit version value or error
+        if (version_timer.check())
+        {
+            context.can_bus().transmit(wet_board_version_id, packed_version);
+        }
 
         if (publish_timer.check())
         {
