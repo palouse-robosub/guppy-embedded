@@ -1,3 +1,5 @@
 build
 .vscode
+.idea
+.direnv
 .DS_Store
