@@ -88,7 +88,7 @@ void board_motor_loop()
     constexpr uint32_t packed_version = firmware_version::parse(PICO_PROGRAM_VERSION_STRING);
     if ((packed_version & 0xFF000000u) == 0xFF000000u)
     {
-        std::printf("Invalid firmware version format, expected v.XX.XX.XX\n");
+        std::printf("Invalid firmware version format, expected vXX.XX.XX\n");
     }
 
     // timer to send the version every second
