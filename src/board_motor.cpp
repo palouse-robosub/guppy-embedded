@@ -8,6 +8,7 @@
 
 #include "board_motor.hpp"
 #include "firmware_version.hpp"
+#include "guppy_can.hpp"
 
 using namespace guppylib;
 
@@ -65,7 +66,7 @@ void board_motor_loop()
     /* updates motors */
     context.set_can_bus_message_callback([&](can2040_msg& msg, Core<3>& core)
     {
-        if (msg.id >= motor_board_id + 1 && msg.id <= motor_board_id + num_motors)
+        if (guppy_can::device_id_of(msg.id) == guppy_can::Motor0.device_id())
         {
             float motor_value = CanBus::parse_float(msg) * MOTOR_MULT;
         

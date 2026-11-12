@@ -11,7 +11,7 @@ target_sources(guppylib INTERFACE
 pico_enable_stdio_usb(guppylib 1)
 pico_enable_stdio_uart(guppylib 0)
 
-target_include_directories(guppylib INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
+target_include_directories(guppylib INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include ${CMAKE_BINARY_DIR}/guppy-codegen/generated)
 
 # Pull in pico libraries that we need
 target_link_libraries(guppylib INTERFACE 

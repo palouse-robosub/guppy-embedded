@@ -64,7 +64,7 @@ ExternalProject_Add(guppy_codegen
     -DCMAKE_CXX_COMPILER=c++
     -DCMAKE_TOOLCHAIN_FILE=
     BUILD_ALWAYS 1
-    BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/guppy-codegen/generated/GuppyCAN.hpp
+    BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/guppy-codegen/generated/guppy_can.hpp
     INSTALL_COMMAND ""
 )
 #include(codegen/CMakeLists.txt)
@@ -79,7 +79,9 @@ add_subdirectory(lib/guppylib)
 
 
 function(guppy_init_target TARGET_NAME)
-    target_include_directories(${TARGET_NAME} PRIVATE include)
+    target_include_directories(${TARGET_NAME}
+            PRIVATE include ${CMAKE_BINARY_DIR}/guppy-codegen/generated)
+    add_dependencies(${TARGET_NAME} guppy_codegen)
 
     #pico_set_program_version embeds a version string into compiled binary
     #can look at version with picotool info
