@@ -10,6 +10,8 @@
 #include "firmware_version.hpp"
 #include "guppy_can.hpp"
 
+using guppy_can::can_size_t;
+
 using namespace guppylib;
 
 
@@ -19,10 +21,10 @@ constexpr std::array<uint8_t, num_motors> motor_pins = { 16, 17, 18, 20, 19, 25,
 constexpr uint8_t estop_pin = 29;
 constexpr uint8_t led_pin = 28;
 
-constexpr uint16_t motor_board_heartbeat_id = 0x010;
-constexpr uint16_t motor_board_version_id = 0x01C;
-constexpr uint16_t motor_board_id = 0x410;
-constexpr uint16_t estop_triggered_id = 0x01B;
+// constexpr uint16_t motor_board_heartbeat_id = 0x010;
+// constexpr uint16_t motor_board_version_id = 0x01C;
+// constexpr uint16_t motor_board_id = 0x410;
+// constexpr uint16_t estop_triggered_id = 0x01B;
 // constexpr uint16_t torpedo_servo_id = 0x019;
 // constexpr uint16_t claw_servo_id = 0x01A;
 
@@ -60,7 +62,7 @@ void board_motor_loop()
     Timer estop_rate_limit(20);
     bool estop_triggered = true; // to be safe, start with trigger being true
 
-    Core context(8, 9, 0x010, std::move(led_controller));
+    Core context(8, 9, guppy_can::MotorBoardHeartbeat.id, std::move(led_controller));
 
     /* callback called on can message */
     /* updates motors */
@@ -72,7 +74,7 @@ void board_motor_loop()
         
             const int pwm_value = pwm::from_float(motor_value);
 
-            const int index = msg.id - motor_board_id - 1;
+            const can_size_t index = guppy_can::sub_id_of(msg.id);
             if (!estop_triggered && allowed_to_motor(core.get_state()))
                 pwm::write(motor_pins[index], pwm_value);
             last_updates[index].reset();
@@ -102,13 +104,13 @@ void board_motor_loop()
         // transmit version value or error
         if (version_timer.check())
         {
-            context.can_bus().transmit(motor_board_version_id, packed_version);
+            context.can_bus().transmit(guppy_can::MotorBoardVersion.id, packed_version);
         }
 
         if (estop_rate_limit.check())
         {
             estop_triggered = gpio::read(estop_pin);
-            context.can_bus().transmit(estop_triggered_id, static_cast<int32_t>(estop_triggered)); 
+            context.can_bus().transmit(guppy_can::EStopTriggered.id, static_cast<int32_t>(estop_triggered));
             // TODO: should not be transmitting all the time
             // there is already a heartbeat so this should only send on change right? Will packets ever get dropped?
         }
