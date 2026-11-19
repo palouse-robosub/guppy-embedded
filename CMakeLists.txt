@@ -35,6 +35,14 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(can2040)
 
+FetchContent_Declare(
+        can_xml
+        GIT_REPOSITORY https://github.com/palouse-robosub/can-xml.git
+        GIT_TAG main
+        SOURCE_SUBDIR no_cmake_here
+)
+FetchContent_MakeAvailable(can_xml)
+
 add_library(can2040 STATIC
     ${can2040_SOURCE_DIR}/src/can2040.c
 )
@@ -47,6 +55,22 @@ target_link_libraries(can2040
     hardware_pio
 )
 
+include(ExternalProject)
+ExternalProject_Add(guppy_codegen
+    SOURCE_DIR ${can_xml_SOURCE_DIR}
+    BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/guppy-codegen
+    CMAKE_ARGS
+    -DCMAKE_C_COMPILER=cc
+    -DCMAKE_CXX_COMPILER=c++
+    -DCMAKE_TOOLCHAIN_FILE=
+    BUILD_ALWAYS 1
+    BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/guppy-codegen/generated/guppy_can.hpp
+    INSTALL_COMMAND ""
+)
+#include(codegen/CMakeLists.txt)
+#add_subdirectory(codegen)
+# TODO: move some stuff from can_generator.cpp into here so that we can depend on it??
+
 # add libraries
 add_subdirectory(vendor/pico_neopixels) # TODO: update guppylib to not depend on pico_neopixels
 add_subdirectory(vendor/barometer)
@@ -55,7 +79,9 @@ add_subdirectory(lib/guppylib)
 
 
 function(guppy_init_target TARGET_NAME)
-    target_include_directories(${TARGET_NAME} PRIVATE include)
+    target_include_directories(${TARGET_NAME}
+            PRIVATE include ${CMAKE_BINARY_DIR}/guppy-codegen/generated)
+    add_dependencies(${TARGET_NAME} guppy_codegen)
 
     #pico_set_program_version embeds a version string into compiled binary
     #can look at version with picotool info

@@ -14,6 +14,7 @@
 
 #include "board_wet.hpp"
 #include "firmware_version.hpp"
+#include "guppy_can.hpp"
 
 
 
@@ -25,7 +26,7 @@ constexpr uint16_t switch_one_pin = 26;
 constexpr uint16_t switch_two_pin = 19;
 constexpr uint16_t led_pin = 20;
 
-constexpr uint16_t wet_board_version_id = 0x02A;
+// constexpr uint16_t wet_board_version_id = 0x02A;
 
 using namespace guppylib;
 
@@ -73,7 +74,7 @@ void board_wet_loop()
 
     Timer publish_timer(50);
 
-    Core<3> context(8, 9, 0x020, std::move(led_controller));
+    Core<3> context(8, 9, guppy_can::WetBoardHeartbeat.id, std::move(led_controller));
 
     // Parse once at startup; report malformed tags without stopping board work
     constexpr uint32_t packed_version = firmware_version::parse(PICO_PROGRAM_VERSION_STRING);
@@ -92,7 +93,7 @@ void board_wet_loop()
         // transmit version value or error
         if (version_timer.check())
         {
-            context.can_bus().transmit(wet_board_version_id, packed_version);
+            context.can_bus().transmit(guppy_can::WetBoardVersion.id, packed_version);
         }
 
         if (publish_timer.check())
@@ -103,27 +104,27 @@ void board_wet_loop()
                 float depth = sensor.depth();
                 float temp = sensor.temperature();
 
-                context.can_bus().transmit(0x026, depth);
-                context.can_bus().transmit(0x025, temp);
+                context.can_bus().transmit(guppy_can::BarometerDepth.id, depth);
+                context.can_bus().transmit(guppy_can::BarometerTemp.id, temp);
             }
 
             /* transmit switch values */
             const bool switch_one = gpio::read(switch_one_pin);
             const bool switch_two = gpio::read(switch_two_pin); 
 
-            context.can_bus().transmit(0x022, static_cast<int32_t>(switch_one));
-            context.can_bus().transmit(0x023, static_cast<int32_t>(switch_two));
+            context.can_bus().transmit(guppy_can::Switch1.id, static_cast<int32_t>(switch_one));
+            context.can_bus().transmit(guppy_can::Switch2.id, static_cast<int32_t>(switch_two));
 
             /* set up switch if it's not set up */ // TODO: sensor init is slow i think and blocking? anyways this stuff isn't good
             if (!sensor.isInitialized())
             {
                 if (!sensor.init(PICO_I2C_INSTANCE))
                 {
-                    context.can_bus().transmit(0x029, static_cast<int32_t>(0));
+                    context.can_bus().transmit(guppy_can::BarometerError.id, static_cast<int32_t>(0));
                 }
                 else
                 {
-                    context.can_bus().transmit(0x029, static_cast<int32_t>(1));
+                    context.can_bus().transmit(guppy_can::BarometerError.id, static_cast<int32_t>(1));
                 }
             }
         }

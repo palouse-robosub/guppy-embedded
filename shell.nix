@@ -3,6 +3,7 @@ let
     pico-sdk = pkgs.pico-sdk.override { withSubmodules = true; };
 in pkgs.mkShell {
     packages = [
+        pkgs.gcc
         pkgs.gcc-arm-embedded
         pkgs.cmake
         pkgs.gnumake
